@@ -1,5 +1,5 @@
 ---
-title: "The association between the consumption of legumes and incidence of type 2 diabetes: the EPIC-Norfolk study"
+title: "MPhil Thesis: Legume & T2D: EPIC-Norfolk"
 output:
   html_document: default
   pdf_document: default
