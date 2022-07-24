@@ -132,6 +132,12 @@ library(randomForest)
 library(ranger)
 ```
 
+#Install and load {pspline}
+```{r}
+#install.packages("pspline")
+library(pspline)
+```
+
 
 ## Loading the datasets
 
@@ -1304,6 +1310,34 @@ knitr::kable(t2, align=c("l", "l", "l","r","r", "r", "r"))
 
 ```
 
+## Waist (Men vs Women)
+
+```{r}
+WM <-dff %>%
+  filter(SEX==1)
+
+WM %>%
+  filter(!is.na(WAIST))%>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =mean(WAIST),
+    sd= sd(WAIST))
+
+
+WM <-dff %>%
+  filter(SEX==2)
+
+WM %>%
+  filter(!is.na(WAIST))%>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =mean(WAIST),
+    sd= sd(WAIST))
+```
+
+
 ## Absolute legume consumption   
 
 #Calculating mean, standard deviation, median and inter-quartile range of Total legumes
@@ -1902,6 +1936,10 @@ dff$entryage <- dff$AGE
 dff$exitage <- dff$agetime
 
 dff$DM_INC08 <- as.numeric(dff$DM_INC08)
+
+median(dff$TimetoEvent)
+sum(dff$TimetoEvent)
+
 ```
 
 ## Calculating serving size of legume, lentil, peas, beans
@@ -1955,6 +1993,13 @@ attach(dff)
 ```{r}
 #Checking distribution of cases in each group of legumes
 table(dff$legume_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
+
 
 # Creating survival object
 
@@ -2106,28 +2151,18 @@ lrtest(cox_M4, cox_M8)
 ```
 
 
-## Cubic Spline regression for total legumes
-```{r}
-mfit1 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+pspline(legumesvge,4)+LCMedianea+
-                  SEX+
-                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
-                  D1_VEG_A+D1_FRUIT_A++Fish+Meat+MILK+EGGS+D1_NUT065+
-                  FH_DM+FH_CVA+FH_CA+
-                  BMI+WAIST_Class, data=dff)
-
-summary(mfit1)
-
-
-
-termplot(mfit1, terms = 2, se=TRUE, col.term = 1, col.se = 1, xlabs = "Serving of Total Legume/day", ylabs = "log HR", ylim = c(-5,5))
-
-```
 
 ## Lentil
 
 ```{r}
 #Checking distribution of cases in each group of lentil
 table(dff$lentil_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(lentil_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -2271,29 +2306,17 @@ lrtest(cox_ML4, cox_ML8)
 
 ```
 
-
-## Cubic Spline regression for lentil
-```{r}
-mfit2 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea+pspline(lentilsvge,4)+lentilMedianea+
-                  SEX+
-                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
-                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
-                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
-                  BMI+WAIST_Class, data = dff)
-
-summary(mfit2)
-
-termplot(mfit2, terms = 2, se=TRUE, col.term = 1, col.se = 1, xlabs = "Serving of lentils/day", ylabs = "log HR", ylim = c(-5,5))
-```
-
-
-
-
 ## Peas
 
 ```{r}
 #Checking distribution of cases in each group of peas
 table(dff$peas_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(peas_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -2436,27 +2459,17 @@ lrtest(cox_MP4, cox_MP8)
 ```
 
 
-## Cubic Spline regression for Peas
-```{r}
-mfit3 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea+pspline(peasvge, 4)+PeasMedianea+
-                   SEX+
-                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
-                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
-                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
-                   BMI+WAIST_Class, data = dff)
-
-summary(mfit3)
-
-termplot(mfit3, terms = 2, se=TRUE, col.term = 1, col.se = 1, xlabs = "Serving of Peas/day", ylabs = "log HR", ylim = c(-5,5))
-```
-
-
-
 ## Beans
 
 ```{r}
 #Checking distribution of cases in each group of beans
 table(dff$beans_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(beans_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -2601,22 +2614,6 @@ lrtest(cox_MB4, cox_MB8)
 
 
 ```
-
-## Cubic Spline regression for Beans
-```{r}
-mfit4 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea+pspline(beansvge, 4)+BeansMedianea+
-                   SEX+
-                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
-                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
-                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
-                   BMI+WAIST_Class, data = dff)
-
-summary(mfit4)
-
-termplot(mfit4, terms = 2, se=TRUE, col.term = 1, col.se = 1, xlabs = "Serving of Beans/day", ylabs = "log HR", ylim = c(-5,5))
-```
-
-
 
 
 ## Substitutional Analysis
@@ -3028,7 +3025,7 @@ text <- cbind(c("", "Food", "Red Meat", "White Meat", "Processed Meat", "White F
 
 data %>% 
   forestplot(labeltext = text, 
-             clip = c(0.1, 2.5), 
+             clip = c(0.7, 1.42), 
              xlog = TRUE, 
              col = fpColors(box = "black",
                             line = "black"))
@@ -3112,6 +3109,12 @@ dff %>%
 
 #Checking distribution of cases in each group of legumes
 table(dff$legume_rankeap, dff$DM_INC08)
+
+dff %>%
+  group_by(legume_rankeap)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 
 #Creating a variable for median consumption of each group
 dff$LCMedianeap<-dff$legume_rankeap
@@ -3199,6 +3202,173 @@ summary(cox_M4P)
 ################################################################################
 ```
 
+#Peanut
+
+```{r}
+#Separating Non-consumer and Consumer of peanut
+dff <- dff %>% 
+  mutate(Peanut_n=case_when(PEANUTQUANT_SUM==0~1,
+                         PEANUTQUANT_SUM!=0~2))
+
+
+#Quartiles rank of the peanut
+dff <- dff %>% 
+  group_by(Peanut_n) %>%
+  mutate(P_rank = ntile(PEANUTQUANT_SUM,3))
+
+dff$P_rank[dff$PEANUTQUANT_SUM==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of peanut 
+
+dff %>%
+  group_by(P_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(PEANUTQUANT_SUM), #Calculating mean
+    median = median(PEANUTQUANT_SUM), #Calculating median
+    sd= sd(PEANUTQUANT_SUM), #Calculating standard deviation
+    IQF = IQR(PEANUTQUANT_SUM), #Calculating inter-quartile range
+    QR1 = quantile(PEANUTQUANT_SUM, 0.25), 
+    QR3 = quantile(PEANUTQUANT_SUM, 0.75))
+
+
+#Energy-adjusted average peanut consumption (Residual Method) 
+################################################################################
+# Residual method
+pregress = lm(dff$PEANUTQUANT_SUM~dff$D1_NUT064)
+summary(pregress)
+
+# Create a variable called peanut_residual, which contains the residuals from the
+# Regression model
+dff$peanut_residual = residuals(pregress)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted peanut intake
+# when energy intake=sample mean
+
+predpeanut = pregress$coefficients[1]+pregress$coefficients[2]*EI_mean
+
+# Generate a variable called ea_legume which is energy-adjusted peanut intake
+dff$ea_peanut=dff$peanut_residual+predpeanut  
+
+dff$ea_peanut[dff$PEANUTQUANT_SUM == 0] <- 0
+
+#Quartiles rank of the energy adjusted peanut
+
+dff <- dff %>% 
+  group_by(Peanut_n) %>%
+  mutate(P_ranke = ntile(ea_peanut,3))
+
+dff$P_ranke[dff$PEANUTQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted peanut intake for each category
+dff %>%
+  group_by(P_ranke) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_peanut), #Calculating mean
+    median = median(ea_peanut), #Calculating median
+    sd= sd(ea_peanut), #Calculating standard deviation
+    IQF = IQR(ea_peanut), #Calculating inter-quartile range
+    QR1 = quantile(ea_peanut, 0.25), 
+    QR3 = quantile(ea_peanut, 0.75))
+
+#Checking distribution of cases in each group of peanut
+table(dff$P_ranke, dff$DM_INC08)
+
+dff %>%
+  group_by(P_ranke)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+#Creating a variable for median consumption of each group
+dff$PMediane<-dff$P_ranke
+dff$PMediane[dff$P_ranke == 1] <- 0
+dff$PMediane[dff$P_ranke == 2] <- 0.94
+dff$PMediane[dff$P_ranke == 3] <- 3.52
+dff$PMediane[dff$P_ranke == 4] <- 10.84
+
+dff$PMediane <- as.numeric(dff$PMediane)
+
+dff <- dff %>% mutate(peanutsvg = ea_peanut/20)
+
+```
+
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~P_ranke)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+################################################################################
+
+#Univariate Model
+################################################################################
+#Peanut consumption (Non-consumer and Tertiles of Consumer(0,1,2,3))
+P_ranke <- factor(dff$P_ranke, levels=c(0,1,2,3))
+
+cox_GPE <- coxph(dff.surv~P_ranke+peanutsvg+PMediane)
+summary(cox_GPE)
+
+
+#Multivariate Model
+################################################################################
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+peanutsvg+PMediane+
+                   SEX)
+summary(cox_M1PE)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+peanutsvg+PMediane+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2PE)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+peanutsvg+PMediane+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3PE)
+
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+peanutsvg+PMediane+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4PE)
+```
+
 
 ## Legume, by type of dishes
 
@@ -3236,6 +3406,12 @@ dff %>%
 
 #Checking distribution of cases in each group of Dried and cooked beans/lentils
 table(dff$DC_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(DC_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 ```
 
 ```{r}
@@ -3362,6 +3538,12 @@ dff %>%
 
 #Checking distribution of cases in each group of Canned beans in sauce
 table(dff$DCanned_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(DCanned_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 ```
 
 ```{r}
@@ -3487,6 +3669,12 @@ dff %>%
 
 #Checking distribution of cases in each group of legumes
 table(dff$vdish_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(vdish_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 ```
 
 ```{r}
@@ -3590,7 +3778,8 @@ dff <- dff %>%
 #Quartiles rank of the legume (Meat dish)
 dff <- dff %>% 
   group_by(Meat_n) %>%
-  mutate(mdish_rank = ntile(Meat_dish_legume,3))
+  mutate(mdish_rank = ntile(Meat_dish_legume,3))%>%
+  ungroup()
 
 dff$mdish_rank[dff$Meat_dish_legume==0] <- 0
 
@@ -3606,11 +3795,19 @@ dff %>%
     sd= sd(Meat_dish_legume), #Calculating standard deviation
     IQF = IQR(Meat_dish_legume), #Calculating inter-quartile range
     QR1 = quantile(Meat_dish_legume, 0.25), 
-    QR3 = quantile(Meat_dish_legume, 0.75))
+    QR3 = quantile(Meat_dish_legume, 0.75))%>%
+  ungroup()
 
 
 #Checking distribution of cases in each group
 table(dff$mdish_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(mdish_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))%>%
+  ungroup()
 ```
 
 
@@ -3842,6 +4039,12 @@ attach(dff)
 
 table(dff$legume_rankr, dff$DM_INC08)
 
+dff %>%
+  group_by(legume_rankr)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
 # Creating survival object
 
 dff.surv <- Surv(TimetoEvent, DM_INC08) 
@@ -3851,7 +4054,6 @@ dff.surv <- Surv(TimetoEvent, DM_INC08)
 survdiff(dff.surv~legume_rankr)  #Log rank test
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 #Univariate Model
 #Legume consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
@@ -3909,11 +4111,45 @@ summary(cox_M4S2L)
 
 ```
 
+## Cubic Spline regression for total legumes
+```{r}
+## Fit the model
+mfit1 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(legumesvg, df=4)+legume_rankr+LCMedianr+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI,data=dff)
+
+summary(mfit1)
+
+## Return the data points to plot HR
+ptemp <-termplot(mfit1, se=TRUE, plot=FALSE)
+lterm <-ptemp$legumesvg
+
+lterm <- lterm %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm$x, lterm$HR, type='l', lty = 1, xlab = 'Consumption of total legumes(servings/day)', 
+        ylab='Hazard ratio', ylim=c(0,10))
+lines(lterm$x, lterm$LCI, lty = 'dashed', col = 'black')
+lines(lterm$x, lterm$HCI, lty = 'dashed', col = 'black')
+```
+
 ## Lentil
 
 ```{r}
 #Checking distribution of cases in each group of lentil
 table(dff$lentil_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(lentil_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -3984,11 +4220,48 @@ summary(cox_M4S2l)
 
 ```
 
+## Cubic Spline regression for lentil
+```{r}
+## Fit the model
+dfln <- dff%>%
+  filter(lentilsvg<4)
+
+mfit2<- coxph(Surv(entryage, exitage, DM_INC08)~pspline(lentilsvg, df=4)+lentil_rank+lentilMedian+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dfln)
+
+summary(mfit2)
+
+## Return the data points to plot HR
+ptemp2 <-termplot(mfit2, se=TRUE, plot=FALSE)
+lterm2 <-ptemp2$lentilsvg
+
+lterm2 <- lterm2 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm2$x, lterm2$HR, type='l', lty = 1, xlab = 'Consumption of lentils(servings/day)', 
+        ylab='Hazard ratio', ylim=c(0,500))
+lines(lterm2$x, lterm2$LCI, lty = 'dashed', col = 'black')
+lines(lterm2$x, lterm2$HCI, lty = 'dashed', col = 'black')
+```
+
 ## Peas
 
 ```{r}
 #Checking distribution of cases in each group of peas
 table(dff$peas_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(peas_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -4059,12 +4332,53 @@ summary(cox_M4S2P)
 
 ```
 
+
+## Cubic Spline regression for Peas
+```{r}
+## Fit the model
+dfp <- dff%>%
+  filter(peasvg<7)
+
+mfit3 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(peasvg, df=4)+peas_rank+PeasMedian+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dfp)
+
+summary(mfit3)
+
+## Return the data points to plot HR
+ptemp3 <-termplot(mfit3, se=TRUE, plot=FALSE)
+lterm3 <-ptemp3$peasvg
+
+lterm3 <- lterm3 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm3$x, lterm3$HR, type='l', lty = 1, xlab = 'Consumption of peas(servings/day)', 
+        ylab='Hazard ratio', ylim=c(0,10))
+lines(lterm3$x, lterm3$LCI, lty = 'dashed', col = 'black')
+lines(lterm3$x, lterm3$HCI, lty = 'dashed', col = 'black')
+
+```
+
+
 ## Beans
 
 ```{r}
 
 #Checking distribution of cases in each group of beans
 table(dff$beans_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(beans_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
 
 # Creating survival object
 
@@ -4131,6 +4445,35 @@ cox_M4S2B <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rank+beansvg+BeansMed
                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
                    BMI+WAIST_Class)
 summary(cox_M4S2B)
+
+```
+
+## Cubic Spline regression for Beans
+```{r}
+## Fit the model
+mfit4 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(beansvg, df=4)+beans_rank+BeansMedian+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dff)
+
+summary(mfit4)
+
+## Return the data points to plot HR
+ptemp4 <-termplot(mfit4, se=TRUE, plot=FALSE)
+lterm4 <-ptemp4$beansvg
+
+lterm4 <- lterm4 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+
+## Plot lines
+matplot(lterm4$x, lterm4$HR, type='l', lty = 1, xlab = 'Consumption of beans(servings/day)', 
+        ylab='Hazard ratio', ylim=c(0,10))
+lines(lterm4$x, lterm4$LCI, lty = 'dashed', col = 'black')
+lines(lterm4$x, lterm4$HCI, lty = 'dashed', col = 'black')
 
 ```
 
@@ -4208,7 +4551,6 @@ attach(dffS3) #Attaching datasets
 
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 # Assigning correct object class of each variables
 S3legume_rankea <- factor(dffS3$S3legume_rankea, levels=c(0,1,2,3))
 SEX <- factor(dffS3$SEX, levels=c(1,2))
@@ -4291,7 +4633,6 @@ attach(dffS4) #Attaching datasets
 
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 # Assigning correct object class of each variables
 S4legume_rank <- factor(dffS4$S4legume_rank, levels=c(0,1,2,3))
@@ -4380,7 +4721,6 @@ attach(dffS5) # Attaching datasets
 
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 # Assigning correct object class of each variables
 S5legume_rank <- factor(dffS5$S5legume_rank, levels=c(0,1,2,3))
@@ -4460,7 +4800,6 @@ attach(dffS6) # Attaching datasets
 
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 # Assigning correct object class of each variables
 S6legume_rank <- factor(dffS6$S6legume_rank, levels=c(0,1,2,3))
@@ -4544,7 +4883,6 @@ attach(imputed)# Attach imputed datasets
 
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 # Fit the analysis model to each imputed datasets
 fit <- with(imputed, coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+legumesvg+LCMedianr+
                    SEX+
@@ -4576,10 +4914,9 @@ exp(3.178242e-01)
 exp(1.710883e-02)
 exp(-1.316512e-01)
 exp(1.658689e-01)
-################################################################################
 ```
 
-# Analysis among consumer of legume only
+## Analysis among consumer of legume only
 
 ## Legume with Peanut
 ```{r}
@@ -4605,6 +4942,7 @@ dffCTLP %>%
 #Checking distribution of cases in each group of legumes
 table(dffCTLP$CPlegume_rank, dffCTLP$DM_INC08)
 
+
 #Creating a variable for median consumption of each group
 dffCTLP$LCMedianCTLP<-dffCTLP$CPlegume_rank
 
@@ -4625,10 +4963,17 @@ attach(dffCTLP) # Attaching datasets
 
 
 ```{r}
-
 #Checking distribution of cases in each group of legume
 
 table(dffCTLP$CPlegume_rank, dffCTLP$DM_INC08)
+
+sum(dffCTLP$TimetoEvent)
+
+dffCTLP %>%
+  group_by(CPlegume_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
 
 # Creating survival object
 
@@ -4638,10 +4983,9 @@ CPlegume_rank <- factor(dffCTLP$CPlegume_rank, levels=c(1,2,3,4))
 survdiff(dff.surv~CPlegume_rank)  #Log rank test
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 #Univariate Model
-#Tertile of Legume Consumer(1,2,3))
+#Tertile of Consumer(1,2,3))
 cox_GCTCP <- coxph(dff.surv~CPlegume_rank+legumesvg+LCMedianCTLP)
 summary(cox_GCTCP)
 
@@ -4723,6 +5067,14 @@ dffCTL %>%
 #Checking distribution of cases in each group of legumes
 table(dffCTL$Clegume_rank, dffCTL$DM_INC08)
 
+sum(dffCTL$TimetoEvent)
+
+dffCTL %>%
+  group_by(Clegume_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
 #Creating a variable for median consumption of each group
 dffCTL$LCMedianCTL<-dffCTL$Clegume_rank
 
@@ -4756,10 +5108,9 @@ Clegume_rank <- factor(dffCTL$Clegume_rank, levels=c(1,2,3,4))
 survdiff(dff.surv~Clegume_rank)  #Log rank test
 
 #Estimation of Hazard Ratio (HR) to quantify difference between the groups
-################################################################################
 
 #Univariate Model
-#Tertile of Legume Consumer(1,2,3))
+#Tertile of Consumer(1,2,3))
 cox_GCTC <- coxph(dff.surv~Clegume_rank+legumesvg+LCMedianCTL)
 summary(cox_GCTC)
 
