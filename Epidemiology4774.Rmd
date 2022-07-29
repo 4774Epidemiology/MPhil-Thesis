@@ -1,0 +1,5839 @@
+---
+title: "Legume & T2D: EPIC-Norfolk Study"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+.libPaths()
+newpath <- c("K:/EPIC_NORFOLK/Nazmul Sarwar/Library")
+.libPaths(newpath)
+.libPaths()
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Checking working directory
+
+```{r}
+getwd()
+```
+# Clearing the workspace
+
+```{r}
+rm(list=ls())
+```
+
+################################################################################
+## Install and load packages
+################################################################################
+#Install and load {tidyverse}
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+#Install and load {readxl}
+```{r}
+#install.packages("readxl")
+library(readxl)
+```
+
+#Install and load {dplyr}
+```{r}
+#install.packages("dplyr")
+library(dplyr)
+```
+
+#Install and load {skimr}
+```{r}
+#install.packages("skimr")
+library(skimr)
+```
+
+#Install and load {naniar}
+```{r}
+#install.packages("naniar")
+library(naniar) 
+```
+
+#Install and load {gtsummary}
+```{r}
+#install.packages("gtsummary")
+library(gtsummary)
+```
+
+#Install and load {finalfit}
+```{r}
+#install.packages('finalfit')
+library(finalfit) 
+```
+
+#Install and load {survival}
+```{r}
+#install.packages("survival")
+library(survival)
+```
+
+#Install and load {survminer}
+```{r}
+#install.packages("survminer")
+library(survminer)
+```
+
+#Install and load {lmtest}
+```{r}
+#install.packages("lmtest")
+library(lmtest)
+```
+
+#Install and load {multcomp}
+```{r}
+#install.packages("multcomp")
+library(multcomp)
+```
+
+#Install and load {lubridate}
+```{r}
+#install.packages("lubridate")
+library(lubridate)
+```
+
+#Install and load {mice}
+```{r}
+#install.packages("mice")
+library(mice)
+```
+
+#Install and load {missForest}
+```{r}
+#install.packages("missForest")
+library(missForest)
+```
+
+#Install and load {randomForest}
+```{r}
+#install.packages("randomForest")
+library(randomForest)
+```
+
+#Install and load {ranger}
+```{r}
+#install.packages("ranger")
+library(ranger)
+```
+
+#Install and load {pspline}
+```{r}
+#install.packages("pspline")
+library(pspline)
+```
+
+#Install and load {season}
+```{r}
+#install.packages("season")
+library(season)
+```
+
+#Install and load {scales}
+```{r}
+#install.packages("scales")
+library(scales)
+```
+
+## Loading the datasets
+
+```{r}
+
+df <-read.csv("ENDR017_2019_data20191212.csv")
+
+data_description <-read.csv("ENDR017_2019_dict20191212.csv")
+
+dflentil <-read.csv("ENDR017_2019_data_diner_lentil20191212.csv")
+
+dflentilsum <-read.csv("ENDR017_2019_data_diner_lentilsum20191212.csv")
+
+dfnutseed <-read.csv("ENDR017_2019_data_diner_nutseed20191212.csv")
+
+dfnutseedsum <-read.csv("ENDR017_2019_data_diner_nutseedsum20191212.csv")
+
+dfpeanut <-read.csv("ENDR017_2019_data_diner_peanut20191212.csv")
+
+dfpeanutsum <-read.csv("ENDR017_2019_data_diner_peanutsum20191212.csv")
+
+```
+
+
+#Viewing data
+```{r}
+#df
+```
+
+#Viewing data description
+```{r}
+#View(data_description)
+```
+
+#Exploring the data-sets
+#Summarry statistics for all columns of datasets
+```{r}
+#summary(df) 
+```
+
+#Identify which variables have missing data
+```{r}
+skim(df)   
+```
+
+#Look at missing data patterns 
+```{r}
+gg_miss_upset(df) 
+```
+################################################################################
+## Creating variables for legumes types (Dish Type)
+################################################################################
+```{r}
+#Importing Intake Overview file (File with legume type)
+LTV <- read_excel("IntakeOverviewNw_reordered_classifications_nw2.xlsx", col_names = TRUE, skip = 1)
+
+LTV <- LTV[, c(1,2,8,9)] # Sorting datasets
+
+
+
+#Beans and lentils, dried and cooked
+ddc <- dflentil %>% filter(F_CODE=="13099" | F_CODE=="d3437"| F_CODE=="13107"
+                             | F_CODE=="d3840"| F_CODE=="13097"| F_CODE=="d3433"
+                             | F_CODE=="d3432"| F_CODE=="d3439"| F_CODE=="d3575"
+                             | F_CODE=="13042"| F_CODE=="d3425"| F_CODE=="13116"
+                             | F_CODE=="13077"| F_CODE=="d3897"| F_CODE=="d3426" 
+                             | F_CODE=="13142"| F_CODE=="d3429"| F_CODE=="d3684"
+                             | F_CODE=="d3430"| F_CODE=="13090"| F_CODE=="13063"
+                             | F_CODE=="13075"| F_CODE=="13092"| F_CODE=="13087"
+                             | F_CODE=="13078"| F_CODE=="13110"| F_CODE=="13111"
+                             | F_CODE=="13071"| F_CODE=="13072")
+
+ddc <-aggregate(LENTILQUANT~RELEASEID, ddc, sum)
+
+#Rename column
+ddc <- ddc  %>% rename(
+  "DCBeans" = "LENTILQUANT")
+
+
+
+
+#Canned beans in sauce
+dcanned <- dflentil %>% filter(F_CODE=="13093" | F_CODE=="13047"| F_CODE=="d3847"
+                             | F_CODE=="d5523"| F_CODE=="d5525"| F_CODE=="d3775"
+                             | F_CODE=="13051"| F_CODE=="13079"| F_CODE=="d5524"
+                             | F_CODE=="d3589"| F_CODE=="13048"| F_CODE=="13045"
+                             | F_CODE=="13046"| F_CODE=="13044")
+
+dcanned <-aggregate(LENTILQUANT~RELEASEID, dcanned, sum)
+
+#Rename column
+dcanned <- dcanned  %>% rename(
+  "DCanned" = "LENTILQUANT")
+
+
+
+# Vegetables Dish
+ddveg <- dflentil %>% filter(F_CODE == "15330" |F_CODE == "d5470" |F_CODE == "e5048" 
+                             |F_CODE == "d5776" |F_CODE == "15197" |F_CODE == "15133"
+                             |F_CODE == "15195" |F_CODE == "d5469" |F_CODE == "d5738"
+                             |F_CODE == "15007" |F_CODE == "e5056" |F_CODE == "d5822"
+                             |F_CODE == "d5466" |F_CODE == "15145" |F_CODE == "15094"
+                             |F_CODE == "d5682" |F_CODE == "d5467" |F_CODE == "15265"
+                             |F_CODE == "d5775" |F_CODE == "15194" |F_CODE == "d5875"
+                             |F_CODE == "13119" |F_CODE == "15139" |F_CODE == "d5691"
+                             |F_CODE == "15071" |F_CODE == "15004" |F_CODE == "d5779"
+                             |F_CODE == "d5468" |F_CODE == "d5681" |F_CODE == "15280"
+                             |F_CODE == "d5874" |F_CODE == "15122" |F_CODE == "15201"
+                             |F_CODE == "d5471" |F_CODE == "15199" |F_CODE == "d5866"
+                             |F_CODE == "d5774" |F_CODE == "d5877" |F_CODE == "d5899"
+                             |F_CODE == "d5897" |F_CODE == "d5372" |F_CODE == "d5900"
+                             |F_CODE == "15331" |F_CODE == "15074" |F_CODE == "15072"
+                             |F_CODE == "d5912" |F_CODE == "d5352" |F_CODE == "13120"
+                             |F_CODE == "e5050" |F_CODE == "d5911" |F_CODE == "d5349"
+                             |F_CODE == "d5896" |F_CODE == "15061" |F_CODE == "15196"
+                             |F_CODE == "d5463" |F_CODE == "d5732" |F_CODE == "15312"
+                             |F_CODE == "d5947" |F_CODE == "15060" |F_CODE == "d5970"
+                             |F_CODE == "15073" |F_CODE == "15119" |F_CODE == "d5946"
+                             |F_CODE == "d5361" |F_CODE == "d5898" |F_CODE == "d5880"
+                             |F_CODE == "d5893" |F_CODE == "d5881" |F_CODE == "d5987"
+                             |F_CODE == "d5982" |F_CODE == "d5983" |F_CODE == "d5726"
+                             |F_CODE == "15286")
+
+
+ddveg <-aggregate(LENTILQUANT~RELEASEID, ddveg, sum)
+colnames(ddveg)  # Checking column name
+
+#Rename column
+ddveg <- ddveg  %>% rename(
+  "Vegetables_dish_legume" = "LENTILQUANT")
+
+
+#Meat Dish
+ddmeat <- dflentil %>% filter(F_CODE=="d9504" | F_CODE=="e9338"| F_CODE=="19208"
+                             | F_CODE=="e9220"| F_CODE=="d9807"| F_CODE=="d9926"
+                             | F_CODE=="e9132"| F_CODE=="19206"| F_CODE=="e9259"
+                             | F_CODE=="d9979"| F_CODE=="e9260"| F_CODE=="e9137"
+                             | F_CODE=="d9981"| F_CODE=="e9282"| F_CODE=="d9980"
+                             | F_CODE=="e9141"| F_CODE=="19269"| F_CODE=="e9346"
+                             | F_CODE=="e9123"| F_CODE=="e9236"| F_CODE=="e9122"
+                             | F_CODE=="e9258"| F_CODE=="e9164"| F_CODE=="e9237"
+                             | F_CODE=="e9235"| F_CODE=="d9946"| F_CODE=="d9876"
+                             | F_CODE=="d9874"| F_CODE=="d9875"| F_CODE=="e9319")
+
+ddmeat <-aggregate(LENTILQUANT~RELEASEID, ddmeat, sum)
+
+#Rename column
+ddmeat <- ddmeat  %>% rename(
+  "Meat_dish_legume" = "LENTILQUANT")
+
+#Fish Dish
+ddfish <- dflentil %>% filter(F_CODE == "e6133" | F_CODE == "d6363")
+
+ddfish <-aggregate(LENTILQUANT~RELEASEID, ddfish, sum)
+
+#Rename column
+ddfish <- ddfish  %>% rename(
+  "Fish_dish_legume" = "LENTILQUANT")
+
+
+```
+
+################################################################################
+## Creating variables for legumes types (Lentil, Peas, Beans, Soy)
+################################################################################
+```{r}
+#Importing Intake Overview file (File with legume type)
+IV <- read_excel("IntakeOverviewNw_reordered_classifications_nw2.xlsx", col_names = TRUE, skip = 1)
+
+IO <- IV[, c(1, 21, 38:50)] # Sorting datasets
+
+#Remane column
+IO <- IO  %>% rename(
+  "FCODE" = "FCODE...1",
+   "pdb"= "pdb (dry beans)",
+   "dbb"= 'dbb (dry broad beans)',
+   'dp'= "dp (dry peas)",
+   "chp" = "chp (chickpeas)",
+   "dcp" = "dcp (dry cow peas)",
+   "pp" = "pp (pigeon peas)",
+   "lentils" =  "lentils",
+   "bamb" =  "bamb (bambara beans)", 
+   "lupines" ="lupines",
+   "poth" =  "poth (pulses NES)",
+   "pfl" =  "pfl (pulse flour)",
+   "pbran" = "pbran (pulse bran)" ,
+   "pukn"= "pukn: pulses unknown type (incl mixed pulses)")
+
+
+# Beans (Dry beans)
+dbeans <- dflentil %>% filter(F_CODE=="15272" | F_CODE=="15271"| F_CODE=="e1998"
+                             | F_CODE=="e1921"| F_CODE=="13099"| F_CODE=="13107"
+                             | F_CODE=="d3840" | F_CODE=="13097" | F_CODE=="d3433"
+                             | F_CODE=="d3432" | F_CODE=="13042" | F_CODE=="d3425"
+                             | F_CODE=="d3426"| F_CODE=="d3429"| F_CODE=="d3430"
+                             | F_CODE=="13087"| F_CODE=="13110"| F_CODE=="13111"
+                             | F_CODE=="13071" | F_CODE=="13072" | F_CODE=="13047"
+                             | F_CODE=="d3847" | F_CODE=="d5523" | F_CODE=="d5525"
+                             | F_CODE=="d3775"| F_CODE=="13051"| F_CODE=="13079"
+                             | F_CODE=="13048"| F_CODE=="13045"| F_CODE=="13046"
+                             | F_CODE=="13044" | F_CODE=="15133" | F_CODE=="15007"
+                             | F_CODE=="15145" | F_CODE=="15094" | F_CODE=="d5682"
+                             | F_CODE=="15265"| F_CODE=="d5681"| F_CODE=="15074"
+                             | F_CODE=="15072"| F_CODE=="d5352"| F_CODE=="15073"
+                             | F_CODE=="d9504" | F_CODE=="19208" | F_CODE=="e9220"
+                             | F_CODE=="d9807" | F_CODE=="19206" | F_CODE=="e9259"
+                             | F_CODE=="e9260"| F_CODE=="d9981"| F_CODE=="d9980"
+                             | F_CODE=="e9123"| F_CODE=="e9122"| F_CODE=="d9876"
+                             | F_CODE=="d9874" | F_CODE=="d9875" | F_CODE=="e7026"
+                             | F_CODE=="e7037" | F_CODE=="17267" | F_CODE=="e7036"
+                             | F_CODE=="e7051"| F_CODE=="e7050"| F_CODE=="e7052"
+                             | F_CODE=="e7094"| F_CODE=="17266"| F_CODE=="e7095"
+                             | F_CODE=="e7130" | F_CODE=="f7287" | F_CODE=="17269"
+                             | F_CODE=="15184" | F_CODE=="d3589" | F_CODE=="e7073"
+                             | F_CODE=="19269"| F_CODE=="e1996"| F_CODE=="e1999")
+
+dbeans <-aggregate(LENTILQUANT~RELEASEID, dbeans, sum)
+colnames(dbeans)  # Checking column name
+
+#Renane column
+dbeans <- dbeans  %>% rename(
+  "BEANS" = "LENTILQUANT")
+
+#Peas (Dry peas, dry cow peas, pigeon peas, bambara beans)
+dpeas <- dflentil %>% filter(F_CODE=="15273" | F_CODE=="15274"| F_CODE=="d3437"
+                             | F_CODE=="13142"| F_CODE=="d3685"| F_CODE=="d3842"
+                             | F_CODE=="d3686"| F_CODE=="13126"| F_CODE=="13125"
+                             | F_CODE=="13140"| F_CODE=="13131"| F_CODE=="13077"
+                             | F_CODE=="13075"| F_CODE=="13078"| F_CODE=="13063"
+                             | F_CODE=="15139")
+
+dpeas <-aggregate(LENTILQUANT~RELEASEID, dpeas, sum)
+
+#Rename column
+dpeas <- dpeas  %>% rename(
+  "PEAS" = "LENTILQUANT")
+
+#Lentils (Lentils)
+dlentil <- dflentil %>% filter(F_CODE=="f7116" | F_CODE=="f1526"| F_CODE=="f1437"
+                             | F_CODE=="15235"| F_CODE=="15171"| F_CODE=="d3575"
+                             | F_CODE=="13090"| F_CODE=="	13092"| F_CODE=="13093"
+                             | F_CODE=="15197"| F_CODE=="15195"| F_CODE=="d5738"
+                             | F_CODE=="15194"| F_CODE=="15122"| F_CODE=="15201"
+                             | F_CODE=="15199"| F_CODE=="d5866"| F_CODE=="d5877"
+                             | F_CODE=="d5912"| F_CODE=="d5349"| F_CODE=="15196"
+                             | F_CODE=="15119"| F_CODE=="d5880"| F_CODE=="d5881"
+                             | F_CODE=="e9164"| F_CODE=="e7025"| F_CODE=="f7112"
+                             | F_CODE=="17264"| F_CODE=="e7049"| F_CODE=="e7092"
+                             | F_CODE=="e7091"| F_CODE=="e7090"| F_CODE=="17263"
+                             | F_CODE=="e7126"| F_CODE=="e7128"| F_CODE=="e7127"
+                             | F_CODE=="f7237")
+
+dlentil <-aggregate(LENTILQUANT~RELEASEID, dlentil, sum)
+#Rename column
+dlentil <- dlentil  %>% rename(
+  "LENTIL" = "LENTILQUANT")
+
+
+#Soy
+dsoy <- dflentil %>% filter(F_CODE=="e1380" | F_CODE=="13116"| F_CODE=="d5470"
+                             | F_CODE=="d5469"| F_CODE=="d5466"| F_CODE=="d5467"
+                             | F_CODE=="13119"| F_CODE=="d5468"| F_CODE=="d5471"
+                             | F_CODE=="13120"| F_CODE=="d5463"| F_CODE=="d5732")
+
+dsoy <-aggregate(LENTILQUANT~RELEASEID, dsoy, sum)
+#Rename column
+dsoy <- dsoy  %>% rename(
+  "Soy" = "LENTILQUANT")
+
+```
+
+################################################################################
+## Data Carpentry
+################################################################################
+
+#Joining lentil(Total legume) with main datasets
+```{r}
+df1 <- full_join(df, dflentilsum, by=c('RELEASEID'))
+
+```
+
+#Joining peanut with main datasets
+```{r}
+df2 <- full_join(df1, dfpeanutsum, by=c('RELEASEID') )
+
+```
+
+#Joining Nut with main datasets
+```{r}
+df3 <- full_join(df2, dfnutseedsum, by=c('RELEASEID') )
+
+```
+
+#Joining Beans with main datasets
+```{r}
+df4 <- full_join(df3, dbeans, by=c('RELEASEID') )
+
+```
+
+#Joining Peas with main datasets
+```{r}
+df5 <- full_join(df4, dpeas, by=c('RELEASEID') )
+
+```
+
+#Joining Lentils with main datasets
+```{r}
+df6 <- full_join(df5, dlentil, by=c('RELEASEID') )
+
+```
+
+#Joining Lentils with main datasets
+```{r}
+df7 <- full_join(df6, dsoy, by=c('RELEASEID') )
+
+```
+
+#Joining Dried and cooked beans/lentils with main datasets
+```{r}
+df8 <- full_join(df7, ddc, by=c('RELEASEID') )
+
+```
+
+
+#Joining Canned beans with main datasets
+```{r}
+df9 <- full_join(df8, dcanned, by=c('RELEASEID') )
+
+```
+
+#Joining vegetables dish with main datasets
+```{r}
+df10 <- full_join(df9, ddveg, by=c('RELEASEID') )
+
+```
+
+#Joining meat dish with main datasets
+```{r}
+df11 <- full_join(df10, ddmeat, by=c('RELEASEID') )
+
+```
+
+#Joining fish dish with main datasets
+```{r}
+dff <- full_join(df11, ddfish, by=c('RELEASEID') )
+
+```
+
+#Replace NA with 0 in three new column in data Frame 
+#NA in these column are not missing value, rather non-consumer
+```{r}
+dff$LENTILQUANT_SUM[is.na(dff$LENTILQUANT_SUM)] <- 0
+
+dff$PEANUTQUANT_SUM[is.na(dff$PEANUTQUANT_SUM)] <- 0
+
+dff$NUTSEEDQUANT_SUM[is.na(dff$NUTSEEDQUANT_SUM)] <- 0
+
+dff$BEANS[is.na(dff$BEANS)] <- 0
+
+dff$PEAS[is.na(dff$PEAS)] <- 0
+
+dff$LENTIL[is.na(dff$LENTIL)] <- 0
+
+dff$Soy[is.na(dff$Soy)] <- 0
+
+dff$DCBeans[is.na(dff$DCBeans)] <- 0
+
+dff$DCanned[is.na(dff$DCanned)] <- 0
+
+dff$Vegetables_dish_legume[is.na(dff$Vegetables_dish_legume)] <- 0
+
+dff$Meat_dish_legume[is.na(dff$Meat_dish_legume)] <- 0
+
+dff$Fish_dish_legume[is.na(dff$Fish_dish_legume)] <- 0
+```
+
+
+#Viewing data
+```{r}
+#dff
+```
+
+################################################################################
+## Analysing Population
+################################################################################
+
+# Including Participant attended baseline health-check
+```{r}
+table(dff$HLTH_CHK)
+
+dff <- dff %>%
+  filter(HLTH_CHK==1) 
+```
+
+# Excluding participants with missing food diaries
+```{r}
+length(which(is.na(dff$D1_DAYS)))
+
+dff <- dff %>%
+  filter((!is.na(D1_DAYS)))
+```
+
+# Exclude top and bottom 1% of ratio of total energy intake to energy requirement
+```{r}
+#Calculating BMR and Energy requirement
+dff<- dff %>% mutate(BMR=if_else(SEX==1, 11.5*WEIGHT+873, 8.3*WEIGHT+846))
+
+
+#Calculating the ratio of total energy intake to energy requirement
+dff<- dff %>% mutate(EIBMR=D1_NUT064/BMR)
+
+length(which(between(dff$EIBMR, quantile(dff$EIBMR, 0.01, na.rm=TRUE), 
+                 quantile(dff$EIBMR, 0.99, na.rm=TRUE))))
+
+dff <- dff %>% 
+  filter(between(EIBMR, quantile(EIBMR, 0.01, na.rm=TRUE), 
+                 quantile(EIBMR, 0.99, na.rm=TRUE))) #Exclusion
+```
+
+# Excluding participants with prevalent/unconfirmed diabetes
+```{r}
+#Check Prevalent/unconfirmed diabetes
+table(dff$DM_INC08) 
+
+length(which(dff$DM_INC08==7))
+
+#Exclude Prevalent/unconfirmed diabetes
+dff <- dff %>%
+  filter(dff$DM_INC08!=7) 
+
+# An individual has T2D at Health Check-1, Cox regression automatically removed
+# that participants from analysis due to same entry and exit age
+length(which(dff$NDATE==dff$DM_INC08_DATE))
+
+dSS <- dff %>% filter(DM_INC08_DATE>NDATE) 
+
+dff <- dff %>% filter(RELEASEID != "EN1719_05239") 
+
+```
+
+# Excluding participants with missing covariates, Education level, Family history of diabetes, Alcohol consumption, Smoking status, Self-report hypertension or hypercholesterolaemia, BMI, Physical activity level
+```{r}
+length(which(is.na(dff$EDLEVEL09)))
+length(which(is.na(dff$FH_DM)))
+length(which(is.na(dff$CIGSTAT)))
+length(which(is.na(dff$BP)))
+length(which(is.na(dff$CHOLESTEROL)))
+length(which(is.na(dff$BMI)))
+length(which(is.na(dff$RUPE)))
+
+dff <- dff %>%
+  filter((!is.na(EDLEVEL09)) #Education level
+         & (!is.na(FH_DM)) #Family history of diabetes
+         & (!is.na(CIGSTAT)) #Smoking status
+         & (!is.na(BP)) #Self-report hypertension 
+         & (!is.na(CHOLESTEROL)) #Self-report hypercholesterolaemia
+         & (!is.na(BMI)) #BMI
+         & (!is.na(RUPE))) #Physical activity level
+```
+
+
+# Re-check which variables have missing data
+```{r}
+skim(dff)
+```
+
+
+#Checking number of T2D cases
+```{r}
+table(dff$DM_INC08) 
+```
+
+################################################################################
+## Generating new variables
+################################################################################
+```{r}
+# Label and recode variables (BMI)
+dff <- dff %>% 
+  mutate(BMI_class=case_when(BMI<18.5~1, # Underweight
+                             BMI >= 18.5 & BMI <25~2, # Normal weight
+                             BMI >= 25 & BMI <30~3,# Overweight 
+                             BMI >=30 & BMI <35 ~4, # Obese I
+                             BMI >= 35~5))   # Obese II
+
+# Label and recode variables (WAIST)
+
+dff<- dff %>% mutate(WAIST_Class=case_when(SEX==1 & WAIST <=102 ~1,
+                                           SEX==1 & WAIST >102 ~2,
+                                           SEX==2 & WAIST <=88 ~1,
+                                           SEX==2 & WAIST >88 ~2))
+# Label and recode variables (ETHNIC)
+dff <- dff %>% 
+  mutate(NETHNIC=case_when(ETHNIC==1~1,
+                           ETHNIC == 2 | ETHNIC == 3 | ETHNIC == 4 | ETHNIC == 5
+                           | ETHNIC == 6 | ETHNIC == 7 | ETHNIC == 8~2))
+
+
+# Meat (Red meat, white meat, processed meat)
+dff$Meat<-dff$D1_RMEAT_A+dff$D1_WMEAT_A+dff$D1_PRMEAT_A
+
+# Fish (White fish, Fatty fish)
+dff$Fish<-dff$D1_WFISH_A+dff$D1_FFISH_A
+
+
+# Coffee (Coffee, decaffeinated Coffee powder, caffeinated)
+dff$Coffee<-dff$BEV_COFFEE_DECAF+dff$BEV_COFFEE_DECAF_ADD+dff$BEV_COFFEE_INSTANT
+
+
+# Sweet Beverage (Fizzy soft drinks, low calorie or diet, fizzy soft drinks,Pure fruit juice (100%), Fruit squash or cordial, tea, coffee
+dff$Sweet_beverage <- dff$BEV_FIZZY_DRINKS_LOWCAL + dff$BEV_FIZZY_DRINKS +
+  dff$BEV_FRUIT_JUICE + dff$BEV_FRUIT_SQUASH +dff$BEV_TEA +dff$Coffee+dff$MILK_BEV
+
+# Dairy (Milk, Yoghurt, cheese)
+dff$Dairy<-dff$MILK+dff$MILKOTHR+dff$YOGURTS+dff$CHEESES 
+
+#Creating new column for total legumes by adding legume and peanut
+dff <- dff %>%
+  mutate(Total_legumes = LENTILQUANT_SUM + PEANUTQUANT_SUM)
+
+View(dff)
+
+#Separating Non-consumer and Consumer of Legumes
+dff <- dff %>% 
+  mutate(Total_legumes_n=case_when(Total_legumes==0~1,
+                                   Total_legumes!=0~2))
+
+#Separating consumer and non-consumer of legumes
+dffNC <- dff %>% filter(LENTILQUANT_SUM==0) #Non-consumer
+
+dffC <- dff %>% filter(LENTILQUANT_SUM !=0) #Consumer
+
+#Checking summary statistics of total legumes
+summary(dffC$Total_legumes)
+
+
+#Checking distribution of Total legumes
+hist(dffC$Total_legumes,probability = TRUE, 100, xlab ="Total Legume", 
+     main = "Consumption of Total legume") #Histogram
+
+
+boxplot(dffC$Total_legumes, main = "Consumption of Total legume") #Boxplot
+
+```
+################################################################################
+## Energy-adjusted Consumption
+################################################################################
+## Calculation of Energy-adjusted Legume Consumption
+
+```{r}
+#Separating Non-consumer and Consumer of Legumes
+dff <- dff %>% 
+  mutate(legumes_n=case_when(LENTILQUANT_SUM==0~1,
+                                   LENTILQUANT_SUM!=0~2))
+
+#Quartiles rank of the legume (without peanut)
+dff <- dff %>% 
+  group_by(legumes_n) %>%
+  mutate(legume_rankr = ntile(LENTILQUANT_SUM,3))
+
+dff$legume_rankr[dff$LENTILQUANT_SUM==0] <- 0
+
+#Calculating mean, standard deviation, median and inter-quartiles range of legume without peanut
+dff %>%
+  group_by(legume_rankr) %>%
+  summarise(
+    count = n(),
+    mean =mean(LENTILQUANT_SUM), #Calculating mean
+    median = median(LENTILQUANT_SUM), #Calculating median
+    sd= sd(LENTILQUANT_SUM), #Calculating standard deviation
+    IQF = IQR(LENTILQUANT_SUM) #Calculating inter-quartile range
+  )
+
+#Creating a variable for median consumption of each group
+dff$LCMedianr<-dff$legume_rankr
+
+dff$LCMedianr[dff$legume_rankr == 0] <- 0
+dff$LCMedianr[dff$legume_rankr == 1] <- 5.74
+dff$LCMedianr[dff$legume_rankr == 2] <- 13.77
+dff$LCMedianr[dff$legume_rankr == 3] <- 28.57
+
+dff$LCMedianr <- as.numeric(dff$LCMedianr)
+
+```
+
+
+```{r}
+# Residual method
+regressr = lm(dff$LENTILQUANT_SUM~dff$D1_NUT064)
+summary(regressr)
+
+# Create a variable called legume_residual, which contains the residuals from the
+# regression model
+dff$legume_residualr = residuals(regressr)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted legume intake
+# when energy intake=sample mean
+
+predlegumer = regressr$coefficients[1]+regressr$coefficients[2]*EI_mean
+
+# Generate a variable called ea_legume which is energy-adjusted legume intake
+dff$ea_legumer=dff$legume_residualr+predlegumer  
+
+dff$ea_legumer[dff$LENTILQUANT_SUM == 0] <- 0
+
+#Quartiles rank of the energy adjusted legume (without peanut)
+dff <- dff %>% 
+  group_by(legumes_n) %>%
+  mutate(legume_rankea = ntile(ea_legumer,3))
+
+dff$legume_rankea[dff$LENTILQUANT_SUM==0] <- 0
+
+# Energy-adjusted legume intake for each category
+dff %>%
+  group_by(legume_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    IQF = IQR(ea_legumer),#Calculating inter-quartile range
+    QR1 = quantile(ea_legumer, 0.25), 
+    QR3 = quantile(ea_legumer, 0.75))
+
+#Checking distribution of cases in each group of legumes
+table(dff$legume_rankea, dff$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dff$LCMedianea<-dff$legume_rankea
+
+dff$LCMedianea[dff$legume_rankea == 0] <- 0
+dff$LCMedianea[dff$legume_rankea == 1] <- 5.97
+dff$LCMedianea[dff$legume_rankea == 2] <- 13.29
+dff$LCMedianea[dff$legume_rankrea == 3] <- 28.87
+
+dff$LCMedianea <- as.numeric(dff$LCMedianea)
+
+```
+
+
+## Calculation of Energy-adjusted Lentil Consumption
+
+```{r}
+#Separating Non-consumer and Consumer of Lentil
+dff <- dff %>% 
+  mutate(lentil_n=case_when(LENTIL==0~1,
+                                   LENTIL!=0~2))
+
+#Quartiles rank of the Lentil
+dff <- dff %>% 
+  group_by(lentil_n) %>%
+  mutate(lentil_rank = ntile(LENTIL,3))
+
+dff$lentil_rank[dff$LENTIL==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range
+dff %>%
+  group_by(lentil_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(LENTIL), #Calculating mean
+    median = median(LENTIL), #Calculating median
+    sd= sd(LENTIL), #Calculating standard deviation
+    IQF = IQR(LENTIL) #Calculating inter-quartile range
+  )
+
+#Creating a variable for median consumption of each group
+dff$lentilMedian<-dff$lentil_rank
+
+dff$lentilMedian[dff$lentil_rank == 0] <- 0
+dff$lentilMedian[dff$lentil_rank == 1] <- 3.38
+dff$lentilMedian[dff$lentil_rank == 2] <- 6.07
+dff$lentilMedian[dff$lentil_rank == 3] <- 14.46
+
+dff$lentilMedian <- as.numeric(dff$lentilMedian)
+
+
+#Energy-adjusted lentil consumption (Residual Method) 
+# Residual method
+regressl = lm(dff$LENTIL~dff$D1_NUT064)
+summary(regressl)
+
+# Create a variable called lentil_residual, which contains the residuals from the
+# regression model
+dff$lentil_residual = residuals(regressl)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted lentil intake
+# when energy intake=sample mean
+
+predlentil = regressl$coefficients[1]+regressl$coefficients[2]*EI_mean
+
+# Generate a variable called ea_lentil which is energy-adjusted lentil intake
+dff$ea_lentil=dff$lentil_residual+predlentil
+
+
+dff$ea_lentil[dff$LENTIL == 0] <- 0
+
+#Quartiles rank of the energy adjusted lentil
+dff <- dff %>% 
+  group_by(lentil_n) %>%
+  mutate(lentil_rankea = ntile(ea_lentil,3))
+
+dff$lentil_rankea[dff$LENTIL==0] <- 0
+
+
+# Energy-adjusted lentil intake for each category
+dff %>%
+  group_by(lentil_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_lentil), #Calculating mean
+    median = median(ea_lentil), #Calculating median
+    sd= sd(ea_lentil), #Calculating standard deviation
+    IQF = IQR(ea_lentil), #Calculating inter-quartile range
+    QR1 = quantile(ea_lentil, 0.25), 
+    QR3 = quantile(ea_lentil, 0.75))
+
+#Checking distribution of cases in each group of lentil
+table(dff$lentil_rankea, dff$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dff$lentilMedianea<-dff$lentil_rankea
+
+dff$lentilMedianea[dff$lentil_rankea == 0] <- 0
+dff$lentilMedianea[dff$lentil_rankea == 1] <- 3.38
+dff$lentilMedianea[dff$lentil_rankea == 2] <- 6.10
+dff$lentilMedianea[dff$lentil_rankea == 3] <- 14.52
+
+dff$lentilMedianea <- as.numeric(dff$lentilMedianea)
+
+```
+
+## Calculation of Energy-adjusted Peas Consumption
+
+```{r}
+#Separating Non-consumer and Consumer of Peas
+dff <- dff %>% 
+  mutate(peas_n=case_when(PEAS==0~1,
+                          PEAS!=0~2))
+
+#Quartiles rank of the Peas
+dff <- dff %>% 
+  group_by(peas_n) %>%
+  mutate(peas_rank = ntile(PEAS,3))
+
+dff$peas_rank[dff$PEAS==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range
+dff %>%
+  group_by(peas_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(PEAS), #Calculating mean
+    median = median(PEAS), #Calculating median
+    sd= sd(PEAS), #Calculating standard deviation
+    IQF = IQR(PEAS) #Calculating inter-quartile range
+  )
+
+#Creating a variable for median consumption of each group
+dff$PeasMedian <-dff$peas_rank
+
+dff$PeasMedian[dff$peas_rank == 0] <- 0
+dff$PeasMedian[dff$peas_rank == 1] <- 7.27
+dff$PeasMedian[dff$peas_rank == 2] <- 15.14
+dff$PeasMedian[dff$peas_rank == 3] <- 28.40
+
+dff$PeasMedian <- as.numeric(dff$PeasMedian)
+
+#Energy-adjusted peas consumption (Residual Method) 
+# Residual method
+regressp = lm(dff$PEAS~dff$D1_NUT064)
+summary(regressp)
+
+# Create a variable called peas_residual, which contains the residuals from the
+# regression model
+dff$peas_residual = residuals(regressp)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted peas intake
+# when energy intake=sample mean
+
+predpeas = regressp$coefficients[1]+regressp$coefficients[2]*EI_mean
+
+# Generate a variable called ea_peas which is energy-adjusted peas intake
+dff$ea_peas=dff$peas_residual+predpeas  
+
+dff$ea_peas[dff$PEAS == 0] <- 0
+
+#Quartiles rank of the energy adjusted peas
+dff <- dff %>% 
+  group_by(peas_n) %>%
+  mutate(peas_rankea = ntile(ea_peas,3))
+
+dff$peas_rankea[dff$PEAS==0] <- 0
+
+
+# Energy-adjusted peas intake for each category
+dff %>%
+  group_by(peas_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_peas), #Calculating mean
+    median = median(ea_peas), #Calculating median
+    sd= sd(ea_peas), #Calculating standard deviation
+    IQF = IQR(ea_peas), #Calculating inter-quartile range
+    QR1 = quantile(ea_peas, 0.25), 
+    QR3 = quantile(ea_peas, 0.75))
+
+#Checking distribution of cases in each group of peas
+table(dff$peas_rankea, dff$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dff$PeasMedianea <-dff$peas_rankea
+
+dff$PeasMedianea[dff$peas_rankea == 0] <- 0
+dff$PeasMedianea[dff$peas_rankea == 1] <- 7.49
+dff$PeasMedianea[dff$peas_rankea == 2] <- 15.39
+dff$PeasMedianea[dff$peas_rankea == 3] <- 28.04
+
+dff$PeasMedianea <- as.numeric(dff$PeasMedianea)
+
+```
+
+
+## Calculation of Energy-adjusted Beans Consumption
+
+```{r}
+#Separating Non-consumer and Consumer of Beans
+dff <- dff %>% 
+  mutate(Beans_n=case_when(BEANS==0~1,
+                           BEANS!=0~2))
+
+#Quartiles rank of the beans
+dff <- dff %>% 
+  group_by(Beans_n) %>%
+  mutate(beans_rank = ntile(BEANS,3))
+
+dff$beans_rank[dff$BEANS==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range
+dff %>%
+  group_by(beans_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(BEANS), #Calculating mean
+    median = median(BEANS), #Calculating median
+    sd= sd(BEANS), #Calculating standard deviation
+    IQF = IQR(BEANS) #Calculating inter-quartile range
+  )
+
+#Creating a variable for median consumption of each group
+dff$BeansMedian<-dff$beans_rank
+
+dff$BeansMedian[dff$beans_rank == 0] <- 0
+dff$BeansMedian[dff$beans_rank == 1] <- 5.74
+dff$BeansMedian[dff$beans_rank == 2] <- 11.78
+dff$BeansMedian[dff$beans_rank == 3] <- 23.72
+
+dff$BeansMedian <- as.numeric(dff$BeansMedian)
+
+
+#Energy-adjusted beans consumption (Residual Method) 
+# Residual method
+regressb = lm(dff$BEANS~dff$D1_NUT064)
+summary(regressb)
+
+# Create a variable called beans_residual, which contains the residuals from the
+# regression model
+dff$beans_residual = residuals(regressb)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted beans intake
+# when energy intake=sample mean
+
+predbeans = regressb$coefficients[1]+regressb$coefficients[2]*EI_mean
+
+# Generate a variable called ea_beans which is energy-adjusted beans intake
+dff$ea_beans=dff$beans_residual+predbeans
+
+dff$ea_beans[dff$BEANS == 0] <- 0
+
+#Quartiles rank of the energy adjusted peas
+dff <- dff %>% 
+  group_by(Beans_n) %>%
+  mutate(beans_rankea = ntile(ea_legumer,3))
+
+dff$beans_rankea[dff$BEANS==0] <- 0
+
+# Energy-adjusted beans intake for each category
+dff %>%
+  group_by(beans_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_beans), #Calculating mean
+    median = median(ea_beans), #Calculating median
+    sd= sd(ea_beans), #Calculating standard deviation
+    IQF = IQR(ea_beans), #Calculating inter-quartile range
+    QR1 = quantile(ea_beans, 0.25), 
+    QR3 = quantile(ea_beans, 0.75))
+
+#Checking distribution of cases in each group of beans
+table(dff$beans_rankea, dff$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dff$BeansMedianea<-dff$beans_rankea
+
+dff$BeansMedianea[dff$beans_rankea == 0] <- 0
+dff$BeansMedianea[dff$beans_rankea == 1] <- 5.96
+dff$BeansMedianea[dff$beans_rankea == 2] <- 13.13
+dff$BeansMedianea[dff$beans_rankea == 3] <- 22.96
+
+dff$BeansMedianea <- as.numeric(dff$BeansMedianea)
+```
+
+
+## Calculation of Energy-adjusted Soy Consumption
+
+```{r}
+#Separating Non-consumer and Consumer of Soy
+dff <- dff %>% 
+  mutate(Soy_n=case_when(Soy==0~1,Soy!=0~2))
+
+#Quartiles rank of the Soy
+dff <- dff %>% 
+  group_by(Soy_n) %>%
+  mutate(Soy_rank = ntile(Soy,3)) %>%
+  ungroup()
+
+dff$Soy_rank[dff$Soy==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range
+dff %>%
+  group_by(Soy_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Soy), #Calculating mean
+    median = median(Soy), #Calculating median
+    sd= sd(Soy), #Calculating standard deviation
+    IQF = IQR(Soy) #Calculating inter-quartile range
+  )
+
+#Creating a variable for median consumption of each group
+dff$SoyMedian<-dff$Soy_rank
+
+dff$SoyMedian[dff$Soy_rank == 0] <- 0
+dff$SoyMedian[dff$Soy_rank == 1] <- 4.96
+dff$SoyMedian[dff$Soy_rank == 2] <- 10.23
+dff$SoyMedian[dff$Soy_rank == 3] <- 17.86
+
+dff$SoyMedian <- as.numeric(dff$SoyMedian)
+
+
+#Energy-adjusted Soy consumption (Residual Method) 
+################################################################################
+# Residual method
+regresss = lm(dff$Soy~dff$D1_NUT064)
+summary(regresss)
+
+# Create a variable called beans_residual, which contains the residuals from the
+# regression model
+dff$Soy_residual = residuals(regresss)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted Soy intake
+# when energy intake=sample mean
+
+predSoy = regresss$coefficients[1]+regresss$coefficients[2]*EI_mean
+
+# Generate a variable called ea_beans which is energy-adjusted SOy intake
+dff$ea_Soy=dff$Soy_residual+predSoy
+
+dff$ea_Soy[dff$Soy == 0] <- 0
+
+#Quartiles rank of the energy adjusted Soy
+dff <- dff %>%
+  group_by(Soy_n) %>%
+  mutate(Soy_rankea = ntile(ea_Soy,3)) %>%
+  ungroup()
+
+dff$Soy_rankea[dff$Soy==0] <- 0
+
+
+# Energy-adjusted beans intake for each category
+dff %>%
+  group_by(Soy_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_Soy), #Calculating mean
+    median = median(ea_Soy), #Calculating median
+    sd= sd(ea_Soy), #Calculating standard deviation
+    IQF = IQR(ea_Soy) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of Soy
+table(dff$Soy_rankea, dff$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dff$SoyMedianea<-dff$beans_rankea
+
+dff$SoyMedianea[dff$Soy_rankea == 0] <- 0
+dff$SoyMedianea[dff$Soy_rankea == 1] <- 4.96
+dff$SoyMedianea[dff$Soy_rankea == 2] <- 10.22
+dff$SoyMedianea[dff$Soy_rankea == 3] <- 17.86
+
+dff$SoyMedianea <- as.numeric(dff$SoyMedianea)
+```
+
+
+################################################################################
+## Table 1 Baseline characteristics of the study population (Legume Only)
+################################################################################
+```{r}
+# Label and recode variables
+dfft <- dff %>%
+  mutate(
+    legume_rankea = factor(legume_rankea) %>% 
+      fct_recode("Non-consumer" = "0",
+                 "T1" = "1",
+                 "T2" = "2",
+                 "T3" = "3") %>% 
+      ff_label("Non-consumer and Tertiles of Legume Consumption"),
+    AGE = ff_label(AGE, "Age (years)"), # ff_label table friendly  labels
+    TOWNINDX = ff_label(TOWNINDX, "Townsend area deprivation index"),
+    SEX = factor(SEX) %>% 
+      fct_recode("Men" = "1", 
+                 "Women" = "2") %>% 
+      ff_label("Sex"),
+    NETHNIC = factor(NETHNIC) %>% 
+      fct_recode("White" = "1",
+                 "Other" = "2") %>% 
+      ff_label("Ethnic Origin"),
+    EDLEVEL09 = factor(EDLEVEL09) %>% 
+      fct_recode("NO" = "0",
+                 "O Level" = "1",
+                 "A Level" = "2",
+                 "Degree" = "3") %>% 
+      ff_label("Education level"),
+    MARITAL_STATUS = factor(MARITAL_STATUS) %>% 
+      fct_recode("Single" = "1",
+                 "Married" = "2",
+                 "Widowed" = "3",
+                 "Separated" = "4",
+                 "Divorced" = "5") %>% 
+      ff_label("Marital Status "),
+    CIGSTAT = factor(CIGSTAT) %>% 
+      fct_recode("Current" = "1",
+                 "Former" = "2",
+                 "Never" = "3") %>% 
+      ff_label("Smoking status"),
+    D1_NUT002 = ff_label(D1_NUT002, "Alcohol (g /d))"),
+    RUPE = factor(RUPE) %>% 
+      fct_recode("Inactive" = "1",
+                 "Moderately inactice" = "2",
+                 "Moderately active" = "3",
+                 "Active" = "4") %>% 
+      ff_label("Physical activity level"),
+    BMI = ff_label(BMI, "BMI (kg/m^2)"),
+    BMI_class = factor(BMI_class) %>% 
+      fct_recode("Underweight" = "1",
+                 "Normal weight" = "2",
+                 "Overweight" = "3",
+                 "Obese I" = "4",
+                 "Obese II" = "5") %>% 
+      ff_label("BMI Category"),
+    WAIST = ff_label(WAIST, "Measured waist (cm))"),
+    MI = factor(MI) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Myocardial infraction"),
+    CVA = factor(CVA) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Stroke"),
+    CA = factor(CA) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Cancer"),
+    BP = factor(BP) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Hypertension"),
+    CHOLESTEROL = factor(CHOLESTEROL) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Hypercholesteromia"),
+    FH_DM = factor(FH_DM) %>% 
+      fct_recode("Yes" = "1",
+                 "No" = "2") %>% 
+      ff_label("Family History of diabetes"),
+  )
+
+dependent = "legume_rankea"
+
+explanatory = c("AGE", "TOWNINDX", "SEX", "NETHNIC", 'EDLEVEL09', "MARITAL_STATUS", "CIGSTAT", 
+                "D1_NUT002", "RUPE", "BMI", "BMI_class","WAIST","MI","CVA",
+                "CA","BP","CHOLESTEROL","FH_DM")
+
+dfft %>%
+  summary_factorlist(dependent, explanatory, 
+                     p=TRUE, add_col_totals = TRUE, 
+                     add_row_totals= TRUE, add_dependent_label=TRUE) -> t1
+knitr::kable(t1, align=c("l", "l", "l","r","r", "r", "r"))
+
+```
+
+## Mean daily consumption of food group and nutrient
+
+```{r}
+#Mean daily consumption of food group and nutrient
+
+dfft <- dff %>%
+  mutate(
+    legume_rankea = factor(legume_rankea) %>% 
+      fct_recode("Non-consumer" = "0",
+                 "T1" = "1",
+                 "T2" = "2",
+                 "T3" = "3") %>% 
+      ff_label("Non-consumer and Tertiles of Legume Consumption"), # ff_label table friendly  labels
+    D1_VEG_A = ff_label(D1_VEG_A, "Vegetables (g/d)"),
+    D1_FRUIT_A = ff_label(D1_FRUIT_A, "Fruits (g/d)"),
+    Fish = ff_label(Fish, "Fish (g/d)"),
+    Meat = ff_label(Meat, "Meat (g/d)"),
+    Dairy = ff_label(Dairy, "Dairy products (g/d)"),
+    BEV_TEA = ff_label(BEV_TEA, "Tea (g/d)"),
+    Coffee = ff_label(Coffee, "Coffee (g/d)"),
+    Sweet_beverage = ff_label(Sweet_beverage, "Sweet Beverages (g/d)"),
+    EGGS = ff_label(EGGS, "Eggs (g/d)"),
+    D1_NUT064 = ff_label(D1_NUT064, "Energy (kcal/d)"),
+    D1_NUT600 = ff_label(D1_NUT600, "Fat - total (g/d)"),
+    D1_NUT011 = ff_label(D1_NUT011, "Carbohydrate - total (g/d)"),
+    D1_NUT083 = ff_label(D1_NUT083, "Protein-total (g/d)"),
+    D1_NUT020 = ff_label(D1_NUT020, "Englyst Fibre-total (g/d)"),
+    D1_NUT086 = ff_label(D1_NUT086, "Vitamin A - retinol (mcg/d)"),
+    D1_NUT106 = ff_label(D1_NUT106, "Vitamin D - ergocalciferol (mcg/d)"),
+    D1_NUT107 = ff_label(D1_NUT107, "Vitamin E - alpha tocopherol mg/day"),
+    D1_NUT104 = ff_label(D1_NUT104, "Vitamin B6 - pyridoxine (mg/d)"),
+    D1_NUT103 = ff_label(D1_NUT103, "Vitamin B12 - cobalamin (mcg/d)"),
+    D1_NUT105 = ff_label(D1_NUT105, "Vitamin C - ascorbic acid (mg/d)"),
+    D1_NUT072 = ff_label(D1_NUT072, "Sodium (mg/d)"),
+    D1_NUT069 = ff_label(D1_NUT069, "Magnesium (mg /d)"),
+    D1_NUT063 = ff_label(D1_NUT063, "Potassium (mg /d)"),
+    D1_NUT008 = ff_label(D1_NUT008, "Calcium (mg/d)"),
+    D1_NUT022 = ff_label(D1_NUT022, "Iron (mg /d)"),
+    D1_NUT012 = ff_label(D1_NUT012, "Cholesterol (mg/d)"),
+    D1_NUT302 = ff_label(D1_NUT302, "Total flavonoids (mcg/d)"),
+  )
+
+dependent = "legume_rankea"
+
+explanatory = c("D1_VEG_A", "D1_FRUIT_A", "Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                "EGGS","D1_NUT064","D1_NUT600", "D1_NUT011","D1_NUT083","D1_NUT020","D1_NUT086",
+                "D1_NUT106","D1_NUT107", "D1_NUT104","D1_NUT103", "D1_NUT105", "D1_NUT072", "D1_NUT069",
+                "D1_NUT063", "D1_NUT008", "D1_NUT022", "D1_NUT012", "D1_NUT302")
+
+dfft %>%
+  summary_factorlist(dependent, explanatory, 
+                     p=TRUE, add_col_totals = TRUE, 
+                     add_row_totals= TRUE, add_dependent_label=TRUE) -> t2
+knitr::kable(t2, align=c("l", "l", "l","r","r", "r", "r"))
+
+```
+
+## Waist (Men vs Women)
+
+```{r}
+WM <-dff %>%
+  filter(SEX==1)
+
+WM %>%
+  filter(!is.na(WAIST))%>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =mean(WAIST),
+    sd= sd(WAIST))
+
+
+WM <-dff %>%
+  filter(SEX==2)
+
+WM %>%
+  filter(!is.na(WAIST))%>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =mean(WAIST),
+    sd= sd(WAIST))
+```
+
+################################################################################
+## Absolute legume consumption   
+################################################################################
+
+#Calculating mean, standard deviation, median and inter-quartile range of Total legumes
+```{r}
+dffC %>%
+  summarise(
+    count = n(),
+    mean =mean(LENTILQUANT_SUM), #Calculating mean
+    median = median(LENTILQUANT_SUM), #Calculating median
+    sd= sd(LENTILQUANT_SUM), #Calculating standard deviation
+    IQF = IQR(LENTILQUANT_SUM), #Calculating inter-quartile range
+    QR1 = quantile(LENTILQUANT_SUM, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(LENTILQUANT_SUM, 0.75))
+```
+
+#Calculating mean, standard deviation, median and inter-quartile range of Lentil
+```{r}
+dffLC <- dffC %>%
+  filter(LENTIL!=0) #Lentil consumer only
+
+
+hist(dffLC$LENTIL,probability = TRUE, 100, xlab ="Lentil", 
+     main = "Consumption of Lentil")  #Histogram
+
+
+boxplot(dffLC$LENTIL, main = "Consumption of Lentil") #Boxplot
+
+
+dffLC %>% 
+  summarise(
+    count = n(),
+    mean = mean(LENTIL),
+    median = median(LENTIL),
+    sd= sd(LENTIL),
+    IQF = IQR(LENTIL)
+  )
+```
+
+#Calculating mean, standard deviation, median and inter-quartile range of Peas
+```{r}
+dffPC <- dffC %>%
+  filter(PEAS!=0) #Nutseed consumer only
+
+hist(dffPC$PEAS,probability = TRUE, 100, xlab ="Peas", 
+     main = "Consumption of Peas")  #Histogram
+
+
+boxplot(dffPC$PEAS, main = "Consumption of Peas") #Boxplot
+
+dffPC %>%
+  summarise(
+    count = n(),
+    mean =mean(PEAS),
+    median = median(PEAS),
+    sd= sd(PEAS),
+    IQF = IQR(PEAS)
+  )
+
+```
+
+#Calculating mean, standard deviation, median and inter-quartile range of Beans
+```{r}
+dffBC <- dffC %>%
+  filter(BEANS!=0) #Peanut consumer only
+
+hist(dffBC$BEANS,probability = TRUE, 100, xlab ="Beans", 
+     main = "Consumption of Beans")  #Histogram
+
+
+boxplot(dffBC$BEANS, main = "Consumption of Beans") #Boxplot
+
+dffBC %>%
+  summarise(
+    count = n(),
+    mean=mean(BEANS),
+    median = median(BEANS),
+    sd= sd(BEANS),
+    IQF = IQR(BEANS)
+  )
+
+```
+
+#Calculating mean, standard deviation, median and inter-quartile range of Soy
+```{r}
+dffSC <- dffC %>%
+  filter(Soy!=0) #Peanut consumer only
+
+hist(dffSC$Soy,probability = TRUE, 100, xlab ="Soy", 
+     main = "Consumption of Soy")  #Histogram
+
+
+boxplot(dffSC$Soy, main = "Consumption of Soy") #Boxplot
+
+dffSC %>%
+  summarise(
+    count = n(),
+    mean=mean(Soy),
+    median = median(Soy),
+    sd= sd(Soy),
+    IQF = IQR(Soy)
+  )
+
+```
+
+################################################################################
+## Baseline characteristics of total cohort and consumer of total and individual legumes 
+################################################################################
+#Total Cohort
+```{r}
+dff1 <- dff %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                              "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                              "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                              'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                              "EGGS")
+
+#Modify gtsummary package (For not rounds the percent) 
+
+set_gtsummary_theme(list(
+  "tbl_summary-fn:percent_fun" = scales::label_percent(accuracy = 0.1),
+  "tbl_summary-str:categorical_stat" = "{n} ({p})"
+))
+
+
+dff1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                      all_categorical() ~ "{n} / {N} ({p}%)"),
+                     digits = all_continuous() ~ 2,
+                     missing_text = "(Missing)") -> t4a
+
+```
+
+#Consumer - Total Legume
+```{r}
+
+dffC1 <- dffC %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                                "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                                "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                                'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                                "EGGS")
+
+dffC1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                       all_categorical() ~ "{n} / {N} ({p}%)"),
+                      digits = all_continuous() ~ 2,
+                      missing_text = "(Missing)") -> t4b
+```
+
+```{r}
+#Consumer - Lentil
+
+dffLC1 <- dffLC %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                                  "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                                  "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                                  'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                                  "EGGS")
+
+dffLC1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                        all_categorical() ~ "{n} / {N} ({p}%)"),
+                       digits = all_continuous() ~ 2,
+                       missing_text = "(Missing)")-> t4c
+```
+
+#Consumer - Peas
+```{r}
+
+dffPC1 <- dffPC %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                                  "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                                  "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                                  'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                                  "EGGS") 
+
+dffPC1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                        all_categorical() ~ "{n} / {N} ({p}%)"),
+                       digits = all_continuous() ~ 2,
+                       missing_text = "(Missing)")-> t4d
+
+```
+
+#Consumer - Beans
+```{r}
+
+dffBC1 <- dffBC %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                                  "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                                  "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                                  'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                                  "EGGS")
+
+dffBC1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                        all_categorical() ~ "{n} / {N} ({p}%)"),
+                       digits = all_continuous() ~ 2,
+                       missing_text = "(Missing)")-> t4e
+```
+
+#Consumer - Soy
+```{r}
+
+dffSC1 <- dffSC %>% dplyr::select("AGE", "SEX", "NETHNIC", "SC", "EDLEVEL09", "BMI",
+                                  "BMI_class", "WAIST", "MI", "CVA", "CA", "BP","CHOLESTEROL",
+                                  "FH_DM", "CIGSTAT","D1_NUT002", "RUPE", 'D1_NUT064', 'D1_VEG_A',
+                                  'D1_FRUIT_A',"Fish", "Meat", "Dairy", 'BEV_TEA', 'Coffee', 'Sweet_beverage',
+                                  "EGGS")
+
+dffSC1 %>% tbl_summary(statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                        all_categorical() ~ "{n} / {N} ({p}%)"),
+                       digits = all_continuous() ~ 2,
+                       missing_text = "(Missing)")-> t4f
+
+```
+
+#Merge into one gtsummary objects
+```{r}
+tbl_merge(tbls = list(t4a, t4b, t4c, t4d, t4e, t4f), 
+          tab_spanner = c("**Total Cohort**", "**Total Legume**", "**Lentil**",
+                          "**Peas**", "**Beans**", "**Soy**"))
+```
+
+################################################################################
+## Dietary intake, median (interquartile range)
+################################################################################
+```{r}
+# Total energy
+# Total cohort
+dff %>%
+  filter(D1_NUT064!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_NUT064), #Calculating mean
+    median = median(D1_NUT064), #Calculating median
+    sd= sd(D1_NUT064), #Calculating standard deviation
+    QR1 = quantile(D1_NUT064, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_NUT064, 0.75))
+
+# Legume
+dffC %>%
+  filter(D1_NUT064!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_NUT064), #Calculating mean
+    median = median(D1_NUT064), #Calculating median
+    sd= sd(D1_NUT064), #Calculating standard deviation
+    QR1 = quantile(D1_NUT064, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_NUT064, 0.75))
+
+# Lentil
+dffLC %>%
+  filter(D1_NUT064!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_NUT064), #Calculating mean
+    median = median(D1_NUT064), #Calculating median
+    sd= sd(D1_NUT064), #Calculating standard deviation
+    QR1 = quantile(D1_NUT064, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_NUT064, 0.75))
+
+# Peas
+dffPC %>%
+  filter(D1_NUT064!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_NUT064), #Calculating mean
+    median = median(D1_NUT064), #Calculating median
+    sd= sd(D1_NUT064), #Calculating standard deviation
+    QR1 = quantile(D1_NUT064, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_NUT064, 0.75))
+
+# Beans
+dffBC %>%
+  filter(D1_NUT064!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_NUT064), #Calculating mean
+    median = median(D1_NUT064), #Calculating median
+    sd= sd(D1_NUT064), #Calculating standard deviation
+    QR1 = quantile(D1_NUT064, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_NUT064, 0.75))
+
+
+# Fruit
+# Total cohort
+dff %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_FRUIT_A), #Calculating mean
+    median = median(D1_FRUIT_A), #Calculating median
+    sd= sd(D1_FRUIT_A), #Calculating standard deviation
+    QR1 = quantile(D1_FRUIT_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_FRUIT_A, 0.75))
+
+# Legume
+dffC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_FRUIT_A), #Calculating mean
+    median = median(D1_FRUIT_A), #Calculating median
+    sd= sd(D1_FRUIT_A), #Calculating standard deviation
+    QR1 = quantile(D1_FRUIT_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_FRUIT_A, 0.75))
+
+# Lentil
+dffLC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_FRUIT_A), #Calculating mean
+    median = median(D1_FRUIT_A), #Calculating median
+    sd= sd(D1_FRUIT_A), #Calculating standard deviation
+    QR1 = quantile(D1_FRUIT_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_FRUIT_A, 0.75))
+
+# Peas
+dffPC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_FRUIT_A), #Calculating mean
+    median = median(D1_FRUIT_A), #Calculating median
+    sd= sd(D1_FRUIT_A), #Calculating standard deviation
+    QR1 = quantile(D1_FRUIT_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_FRUIT_A, 0.75))
+
+# Beans
+dffBC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_FRUIT_A), #Calculating mean
+    median = median(D1_FRUIT_A), #Calculating median
+    sd= sd(D1_FRUIT_A), #Calculating standard deviation
+    QR1 = quantile(D1_FRUIT_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_FRUIT_A, 0.75))
+
+
+# Vegetables
+# Total cohort
+dff %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_VEG_A), #Calculating mean
+    median = median(D1_VEG_A), #Calculating median
+    sd= sd(D1_VEG_A), #Calculating standard deviation
+    QR1 = quantile(D1_VEG_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_VEG_A, 0.75))
+
+# Legume
+dffC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_VEG_A), #Calculating mean
+    median = median(D1_VEG_A), #Calculating median
+    sd= sd(D1_VEG_A), #Calculating standard deviation
+    QR1 = quantile(D1_VEG_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_VEG_A, 0.75))
+
+# Lentil
+dffLC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_VEG_A), #Calculating mean
+    median = median(D1_VEG_A), #Calculating median
+    sd= sd(D1_VEG_A), #Calculating standard deviation
+    QR1 = quantile(D1_VEG_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_VEG_A, 0.75))
+
+# Peas
+dffPC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_VEG_A), #Calculating mean
+    median = median(D1_VEG_A), #Calculating median
+    sd= sd(D1_VEG_A), #Calculating standard deviation
+    QR1 = quantile(D1_VEG_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_VEG_A, 0.75))
+
+# Beans
+dffBC %>%
+  summarise(
+    count = n(),
+    mean =mean(D1_VEG_A), #Calculating mean
+    median = median(D1_VEG_A), #Calculating median
+    sd= sd(D1_VEG_A), #Calculating standard deviation
+    QR1 = quantile(D1_VEG_A, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(D1_VEG_A, 0.75))
+
+
+# Fish
+# Total cohort
+dff %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish), #Calculating mean
+    median = median(Fish), #Calculating median
+    sd= sd(Fish), #Calculating standard deviation
+    QR1 = quantile(Fish, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Fish, 0.75))
+
+# Legume
+dffC %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish), #Calculating mean
+    median = median(Fish), #Calculating median
+    sd= sd(Fish), #Calculating standard deviation
+    QR1 = quantile(Fish, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Fish, 0.75))
+
+# Lentil
+dffLC %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish), #Calculating mean
+    median = median(Fish), #Calculating median
+    sd= sd(Fish), #Calculating standard deviation
+    QR1 = quantile(Fish, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Fish, 0.75))
+
+# Peas
+dffPC %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish), #Calculating mean
+    median = median(Fish), #Calculating median
+    sd= sd(Fish), #Calculating standard deviation
+    QR1 = quantile(Fish, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Fish, 0.75))
+
+# Beans
+dffBC %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish), #Calculating mean
+    median = median(Fish), #Calculating median
+    sd= sd(Fish), #Calculating standard deviation
+    QR1 = quantile(Fish, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Fish, 0.75))
+
+# Meat
+# Total cohort
+dff %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat), #Calculating mean
+    median = median(Meat), #Calculating median
+    sd= sd(Meat), #Calculating standard deviation
+    QR1 = quantile(Meat, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Meat, 0.75))
+
+# Legume
+dffC %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat), #Calculating mean
+    median = median(Meat), #Calculating median
+    sd= sd(Meat), #Calculating standard deviation
+    QR1 = quantile(Meat, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Meat, 0.75))
+
+# Lentil
+dffLC %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat), #Calculating mean
+    median = median(Meat), #Calculating median
+    sd= sd(Meat), #Calculating standard deviation
+    QR1 = quantile(Meat, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Meat, 0.75))
+
+# Peas
+dffPC %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat), #Calculating mean
+    median = median(Meat), #Calculating median
+    sd= sd(Meat), #Calculating standard deviation
+    QR1 = quantile(Meat, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Meat, 0.75))
+
+# Beans
+dffBC %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat), #Calculating mean
+    median = median(Meat), #Calculating median
+    sd= sd(Meat), #Calculating standard deviation
+    QR1 = quantile(Meat, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(Meat, 0.75))
+
+```
+
+################################################################################
+## Table 3. Energy-adjusted cumulative average legume consumption  
+################################################################################
+## Calculating mean, standard deviation, median and inter-quartile range of Legumes
+```{r}
+dff %>%
+  filter(LENTILQUANT_SUM!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    QR1 = quantile(ea_legumer, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(ea_legumer, 0.75))
+
+```
+
+## Calculating mean, standard deviation, median and inter-quartile range of Lentil
+```{r}
+dff %>% 
+  filter(LENTIL!=0) %>%
+  summarise(
+    count = n(),
+    mean = mean(ea_lentil),
+    median = median(ea_lentil),
+    sd= sd(ea_lentil),
+    QR1 = quantile(ea_lentil, 0.25), 
+    QR3 = quantile(ea_lentil, 0.75))
+```
+
+## Calculating mean, standard deviation, median and inter-quartile range of Peas
+```{r}
+dff %>%
+  filter(PEAS!=0) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_peas),
+    median = median(ea_peas),
+    sd= sd(ea_peas),
+    QR1 = quantile(ea_peas, 0.25), 
+    QR3 = quantile(ea_peas, 0.75))
+
+```
+
+## Calculating mean, standard deviation, median and inter-quartile range of Beans
+```{r}
+dff %>%
+  filter(BEANS!=0) %>%
+  summarise(
+    count = n(),
+    mean=mean(ea_beans),
+    median = median(ea_beans),
+    sd= sd(ea_beans),
+    QR1 = quantile(ea_beans, 0.25), 
+    QR3 = quantile(ea_beans, 0.75))
+
+```
+
+## Calculating mean, standard deviation, median and inter-quartile range of Soy
+```{r}
+dff %>%
+  filter(Soy!=0) %>%
+  summarise(
+    count = n(),
+    mean=mean(ea_Soy),
+    median = median(ea_Soy),
+    sd= sd(ea_Soy),
+    QR1 = quantile(ea_Soy, 0.25), 
+    QR3 = quantile(ea_Soy, 0.75))
+
+```
+
+################################################################################
+## Survival Analysis
+################################################################################
+```{r}
+#Survival Time Calculation
+#Convert date of T2D ascertainment cases as decimal
+date <- ymd("2006-07-31")
+decimal <- decimal_date(date)  # 2006.578
+
+#Replace missing values with '31-07-2006' in DM_INC08_DATE column
+dff$DM_INC_DATE <- dff$DM_INC08_DATE
+dff$DM_INC_DATE <- date_decimal(dff$DM_INC_DATE, tz="UTC")
+dff$DM_INC_DATE <- as.Date(dff$DM_INC_DATE, format="%yyyy/%mm/%dd")
+
+
+dff$DM_INC08_DATE <- dff$DM_INC08_DATE %>% replace_na(2006.578)
+
+#Convert decimal date format to its normal format
+dff$DM_INC08_DATE <- date_decimal(dff$DM_INC08_DATE, tz="UTC")
+dff$NDATE <- date_decimal(dff$NDATE, tz="UTC")
+
+
+dff$DM_INC08_DATE <- as.Date(dff$DM_INC08_DATE, format="%yyyy/%mm/%dd")
+dff$NDATE <- as.Date(dff$NDATE, format="%yyyy/%mm/%dd")
+
+# Calculating survival times
+dff$TimetoEvent <- difftime(dff$DM_INC08_DATE, dff$NDATE, units = "days")
+
+dff <- dff %>% mutate(TimetoEvent=str_remove_all(TimetoEvent, "days"))
+
+#  Calculating survival times in years
+dff$TimetoEvent <-as.numeric(dff$TimetoEvent)
+
+dff$TimetoEvent <-dff$TimetoEvent/365.25
+
+#Adding age as underlying timescale
+dff$agetime <- dff$AGE+dff$TimetoEvent
+dff$entryage <- dff$AGE
+dff$exitage <- dff$agetime
+
+dff$DM_INC08 <- as.numeric(dff$DM_INC08)
+
+median(dff$TimetoEvent)
+sum(dff$TimetoEvent)
+
+```
+
+## Calculating serving size of legume, lentil, peas, beans
+```{r}
+
+dff <- dff %>% mutate(legumesvge = ea_legumer/20)
+
+dff <- dff %>% mutate(lentilsvge = ea_lentil/20)
+
+dff <- dff %>% mutate(peasvge = ea_peas/20)
+
+dff <- dff %>% mutate(beansvge = ea_beans/20)
+
+dff <- dff %>% mutate(soysvge = ea_Soy/20)
+
+
+dff <- dff %>% mutate(legumesvg = LENTILQUANT_SUM/20)
+
+dff <- dff %>% mutate(lentilsvg = LENTIL/20)
+
+dff <- dff %>% mutate(peasvg = PEAS/20)
+
+dff <- dff %>% mutate(beansvg = BEANS/20)
+
+dff <- dff %>% mutate(soysvg = Soy/20)
+
+
+```
+
+
+```{r}
+# Calculation of Median follow time
+dff %>%
+  summarise(
+    count = n(),
+    mean =mean(TimetoEvent), #Calculating mean
+    median = median(TimetoEvent), #Calculating median
+    sd= sd(TimetoEvent), #Calculating standard deviation
+    QR1 = quantile(TimetoEvent, 0.25), #Calculating inter-quartile range
+    QR3 = quantile(TimetoEvent, 0.75))
+
+```
+
+
+#Attach datasets
+```{r}
+attach(dff)
+```
+################################################################################
+## Legume
+################################################################################
+```{r}
+#Checking distribution of cases in each group of legumes
+table(dff$legume_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(legume_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
+
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+#Kaplan-Meier plot of "Survival probabilities over time  of legume"
+
+km1 <- survfit(dff.surv~legume_rankea)
+
+ggsurvplot(km1, data=dff, censor=F,
+           xlab="Time in years", ylab="Probability of remaining alive (%)", linetype=c(1,1,1,1), 
+           surv.scale="percent", legend="bottom", legend.title="Kaplan-Meir Survivor Function", 
+           legend.labs=c("NC", "T1", "T2", "T3"),
+           palette = c("red","blue", "black","green"),
+           risk.table=T)
+
+
+survdiff(dff.surv~legume_rankea)  #Log rank test
+
+
+## Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+## Univariate Model
+
+#Legume consumption (Quartile of Consumer(0,1,2,3))
+legume_rankea <- factor(dff$legume_rankea, levels=c(0,1,2,3))
+
+cox_G <- coxph(dff.surv~legume_rankea)
+summary(cox_G)
+
+
+cox_GC <- coxph(dff.surv~legumesvge)
+summary(cox_GC)
+
+
+## Multivariate Model
+
+#Model 1: Adjusted for age,  sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  SEX)
+summary(cox_M1)
+
+cox_M1C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX)
+summary(cox_M1C)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+Season <- factor(dff$Season, levels=c(1,2,3,4))
+
+cox_M2 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2)
+
+cox_M2C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2C)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3)
+
+
+cox_M3C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3C)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+
+# Categories of total legume consumption
+cox_M4 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4)
+
+# Continous(Servings of total legume consumption)
+cox_M4C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4C)
+
+
+
+# Categories of total legume consumption
+cox_M4S <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4S)
+
+# Continous(Servings of total legume consumption)
+cox_M4CS <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4CS)
+
+
+## Proportional Hazards assumption: Schoenfeld Residuals Test
+phtest1 <-cox.zph(cox_G)
+phtest1
+ggcoxzph(phtest1)
+
+phtest2 <-cox.zph(cox_GC)
+phtest2
+ggcoxzph(phtest2)
+
+phtest3 <-cox.zph(cox_M4S)
+phtest3
+
+ggcoxzph(phtest3)
+
+
+## Interaction between categories of legume consumption Sex, BMI, Waist
+#Interaction with Sex
+SEX <- factor(dff$SEX, levels=c(1,2))
+cox_M6 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea*SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M6)
+
+#Interaction with BMI
+cox_M7 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea*BMI+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  WAIST_Class)
+summary(cox_M7)
+
+
+#Interaction with Waist
+cox_M8 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea*WAIST_Class+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI)
+summary(cox_M8)
+
+
+#Likelihood ratio test for Sex
+library(lmtest)
+lrtest(cox_M4, cox_M6)
+
+#Likelihood ratio test for BMI
+lrtest(cox_M4, cox_M7)
+
+#Likelihood ratio test for Waist
+lrtest(cox_M4, cox_M8)
+```
+
+
+################################################################################
+## Lentil
+################################################################################
+```{r}
+#Checking distribution of cases in each group of lentil
+table(dff$lentil_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(lentil_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+#Kaplan-Meier plot of "Survival probabilities over time  of lentil"
+
+kmlentil <- survfit(dff.surv~lentil_rankea)
+
+plot(kmlentil, xlab='Years', ylab='Probability of survival (%)', yscale=100, lty=c(1,2,3), 
+     lwd=c(2,2,2), col=c("red","blue", "black","green")) 
+legend("topright", c("NC", "T1", "T2", "T3"), lty=c(1,1), lwd=c(2,2), col=c("red","blue", "black","green"))
+
+
+survdiff(dff.surv~lentil_rankea)  #Log rank test
+
+
+## Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+## Univariate Model
+
+#Lentil consumption (Quartile of Consumer(0,1,2,3))
+lentil_rankea <- factor(dff$lentil_rankea, levels=c(0,1,2,3))
+
+cox_GL <- coxph(dff.surv~lentil_rankea)
+summary(cox_GL)
+
+
+cox_GLC <- coxph(dff.surv~lentilsvge)
+summary(cox_GLC)
+
+## Multivariate Model
+
+# Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_ML1 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea+
+                  SEX)
+summary(cox_ML1)
+
+
+cox_ML1C <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvge+
+                  SEX)
+summary(cox_ML1C)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_ML2 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_ML2)
+
+
+cox_ML2C <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_ML2C)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_ML3 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_ML3)
+
+cox_ML3C <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_ML3C)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_ML4 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_ML4)
+
+
+cox_ML4C <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_ML4C)
+
+## Proportional Hazards assumption: Schoenfeld Residuals Test
+phtestL1 <-cox.zph(cox_GL)
+phtestL1
+ggcoxzph(phtestL1)
+
+
+phtestL2 <-cox.zph(cox_GLC)
+phtestL2
+ggcoxzph(phtestL2)
+
+phtestL3 <-cox.zph(cox_ML4)
+phtestL3
+ggcoxzph(phtestL3)
+
+
+## Interaction between categories of lentil consumption Sex, BMI and Waist
+#Interaction with Sex
+SEX <- factor(dff$SEX, levels=c(1,2))
+cox_ML6 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea*SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_ML6)
+
+
+#Interaction with BMI
+cox_ML7 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea*BMI+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   WAIST_Class)
+summary(cox_ML7)
+
+
+#Interaction with Waist
+cox_ML8 <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rankea*WAIST_Class+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI)
+summary(cox_ML8)
+
+
+#Likelihood ratio test for and Sex
+lrtest(cox_ML4, cox_ML6)
+
+#Likelihood ratio test for BMI
+lrtest(cox_ML4, cox_ML7)
+
+#Likelihood ratio test for Waist
+lrtest(cox_ML4, cox_ML8)
+
+```
+
+
+################################################################################
+## Peas
+################################################################################
+```{r}
+attach(dff)
+#Checking distribution of cases in each group of peas
+table(dff$peas_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(peas_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+#Kaplan-Meier plot of "Survival probabilities over time  of Peas"
+
+kmpeas <- survfit(dff.surv~peas_rankea)
+
+plot(kmpeas, xlab='Years', ylab='Probability of survival (%)', yscale=100, lty=c(1,2,3), 
+     lwd=c(2,2,2), col=c("red","blue", "black","green")) 
+legend("topright", c("NC", "T1", "T2", "T3"), lty=c(1,1), lwd=c(2,2), col=c("red","blue", "black","green"))
+
+
+survdiff(dff.surv~peas_rankea)  #Log rank test
+
+
+## Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+## Univariate Model
+
+#Peas consumption (Quartile of Consumer(0,1,2,3))
+peas_rankea <- factor(dff$peas_rankea, levels=c(0,1,2,3))
+
+cox_GP <- coxph(dff.surv~peas_rankea)
+summary(cox_GP)
+
+cox_GPC <- coxph(dff.surv~peasvge)
+summary(cox_GPC)
+
+## Multivariate Model
+
+#Model 1: Adjusted for age,  sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_MP1 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea+
+                   SEX)
+summary(cox_MP1)
+
+cox_MP1C <- coxph(Surv(entryage, exitage, DM_INC08)~peasvge+
+                   SEX)
+summary(cox_MP1C)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_MP2 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_MP2)
+
+cox_MP2C <- coxph(Surv(entryage, exitage, DM_INC08)~peasvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_MP2C)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_MP3 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MP3)
+
+cox_MP3C <- coxph(Surv(entryage, exitage, DM_INC08)~peasvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MP3C)
+
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_MP4 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MP4)
+
+cox_MP4C <- coxph(Surv(entryage, exitage, DM_INC08)~peasvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MP4C)
+
+
+## Proportional Hazards assumption: Schoenfeld Residuals Test
+phtestP1 <-cox.zph(cox_GP)
+phtestP1
+ggcoxzph(phtestP1)
+
+phtestP2 <-cox.zph(cox_GPC)
+phtestP2
+ggcoxzph(phtestP2)
+
+phtestP3 <-cox.zph(cox_MP4)
+phtestP3
+ggcoxzph(phtestP3)
+
+## Interaction between categories of peas consumption Sex, BMI and Waist
+#Interaction with Sex
+SEX <- factor(dff$SEX, levels=c(1,2))
+cox_MP6 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea*SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MP6)
+
+
+#Interaction with BMI
+cox_MP7 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea*BMI+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   WAIST_Class)
+summary(cox_MP7)
+
+#Interaction with Waist
+cox_MP8 <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rankea*WAIST_Class+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI)
+summary(cox_MP8)
+
+
+#Likelihood ratio test for Sex
+lrtest(cox_MP4, cox_MP6)
+
+#Likelihood ratio test for BMI
+lrtest(cox_MP4, cox_MP7)
+
+#Likelihood ratio test for Waist
+lrtest(cox_MP4, cox_MP8)
+```
+
+################################################################################
+## Beans
+################################################################################
+
+```{r}
+#Checking distribution of cases in each group of beans
+table(dff$beans_rankea, dff$DM_INC08)
+
+dff %>%
+  group_by(beans_rankea)%>%
+  summarise(
+    count = n(),
+    mean =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+#Kaplan-Meier plot of "Survival probabilities over time  of Beans"
+
+kmbeans <- survfit(dff.surv~beans_rankea)
+
+plot(kmbeans, xlab='Years', ylab='Probability of survival (%)', yscale=100, lty=c(1,2,3), 
+     lwd=c(2,2,2), col=c("red","blue", "black","green")) 
+legend("topright", c("NC", "T1", "T2", "T3"), lty=c(1,1), lwd=c(2,2), col=c("red","blue", "black","green"))
+
+
+survdiff(dff.surv~beans_rankea)  #Log rank test
+
+
+## Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+## Univariate Model
+
+#Bean consumption (Quartile of Consumer(0,1,2,3))
+beans_rankea <- factor(dff$beans_rankea, levels=c(0,1,2,3))
+
+cox_GB <- coxph(dff.surv~beans_rankea)
+summary(cox_GB)
+
+cox_GBC <- coxph(dff.surv~beansvge)
+summary(cox_GBC)
+
+## Multivariate Model
+
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_MB1 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea+
+                   SEX)
+summary(cox_MB1)
+
+cox_MB1C <- coxph(Surv(entryage, exitage, DM_INC08)~beansvge+
+                   SEX)
+summary(cox_MB1C)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_MB2 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_MB2)
+
+cox_MB2C <- coxph(Surv(entryage, exitage, DM_INC08)~beansvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_MB2C)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_MB3 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MB3)
+
+cox_MB3C <- coxph(Surv(entryage, exitage, DM_INC08)~beansvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MB3C)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_MB4 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MB4)
+
+cox_MB4C <- coxph(Surv(entryage, exitage, DM_INC08)~beansvge+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MB4C)
+
+
+## Proportional Hazards assumption: Schoenfeld Residuals Test
+phtestB1 <-cox.zph(cox_GB)
+phtestB1
+ggcoxzph(phtestB1)
+
+phtestB2 <-cox.zph(cox_GBC)
+phtestB2
+ggcoxzph(phtestB2)
+
+phtestB2 <-cox.zph(cox_MB4)
+phtestB2
+ggcoxzph(phtestB2)
+
+
+## Interaction between quartiles of bean consumption Sex, BMI and Waist
+
+#Interaction with Sex
+SEX <- factor(dff$SEX, levels=c(1,2))
+cox_MB6 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea*SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MB6)
+
+
+#Interaction with BMI
+cox_MB7 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea*BMI+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   WAIST_Class)
+summary(cox_MB7)
+
+
+#Interaction with Waist
+cox_MB8 <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rankea*WAIST_Class+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI)
+summary(cox_MB8)
+
+
+#Likelihood ratio test for Sex
+lrtest(cox_MB4, cox_MB6)
+
+#Likelihood ratio test for BMI
+lrtest(cox_MB4, cox_MB7)
+
+#Likelihood ratio test for Waist
+lrtest(cox_MB4, cox_MB8)
+```
+
+
+################################################################################
+## Substitutional Analysis
+################################################################################
+
+```{r}
+# Substitution Model
+legume_rankea<- factor(dff$legume_rankea, levels=c(0,1,2,3))
+SEX <- factor(dff$SEX, levels=c(1,2))
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+
+
+cox_SM1 <- coxph(Surv(entryage, exitage, DM_INC08)~LENTILQUANT_SUM+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+D1_WFISH_A+D1_FFISH_A+D1_RMEAT_A+
+                   D1_WMEAT_A+D1_PRMEAT_A+MILK+EGGS+D1_NUT064+
+                   YOGURTS+CHEESES+CEREALS+NUTSEEDQUANT_SUM+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_SM1)
+
+
+
+```
+
+
+## Substituting legume (20g/day) for Red Meat (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[19,19]
+
+cox_SM1$var[1,19]
+
+
+LHR1 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[19])
+LHR1
+
+HR1 =exp(LHR1)
+HR1
+
+var1=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[19,19]-(2*20*50*cox_SM1$var[1,19])
+
+se1=sqrt(var1)
+
+lcl1=exp(LHR1-1.96*se1)
+lcl1
+
+ucl1=exp(LHR1+1.96*se1)
+ucl1
+
+p1=2*pnorm(LHR1/se1)
+p1
+
+```
+
+## Substituting legume (20g/day) for White Meat (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[20,20]
+
+cox_SM1$var[1,20]
+
+LHR2 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[20])
+LHR2
+
+HR2 =exp(LHR2)
+HR2
+
+var2=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[20,20]-(2*20*50*cox_SM1$var[1,20])
+
+se2=sqrt(var2)
+
+lcl2=exp(LHR2-1.96*se2)
+lcl2
+
+ucl2=exp(LHR2+1.96*se2)
+ucl2
+
+p2=2*pnorm(LHR2/se2)
+p2
+```
+
+## Substituting legume (20g/day) for Processed Meat (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[21,21]
+
+cox_SM1$var[1,21]
+
+LHR3 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[21])
+LHR3
+
+HR3 =exp(LHR3)
+HR3
+
+var3=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[21,21]-(2*20*50*cox_SM1$var[1,21])
+
+se3=sqrt(var3)
+
+lcl3=exp(LHR2-1.96*se3)
+lcl3
+
+ucl3=exp(LHR2+1.96*se3)
+ucl3
+
+p3=2*pnorm(LHR3/se3)
+p3
+```
+
+## Substituting legume (20g/day) for White Fish (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[17,17]
+
+cox_SM1$var[1,17]
+
+LHR4 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[17])
+LHR4
+
+HR4 =exp(LHR4)
+HR4
+
+var4=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[17,17]-(2*20*50*cox_SM1$var[1,17])
+
+se4=sqrt(var4)
+
+lcl4=exp(LHR4-1.96*se4)
+lcl4
+
+ucl4=exp(LHR4+1.96*se4)
+ucl4
+
+p4=2*pnorm(LHR4/se4)
+p4
+
+```
+
+## substituting legume (20g/day) for Fatty Fish (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[18,18]
+
+cox_SM1$var[1,18]
+
+LHR5 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[18])
+LHR5
+
+HR5 =exp(LHR5)
+HR5
+
+var5=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[18,18]-(2*20*50*cox_SM1$var[1,18])
+
+se5=sqrt(var5)
+
+lcl5=exp(LHR5-1.96*se5)
+lcl5
+
+ucl5=exp(LHR5+1.96*se5)
+ucl5
+
+p5=2*pnorm(LHR5/se5)
+p5
+```
+
+## substituting legume (20g/day) for Egg (50g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[23,23]
+
+cox_SM1$var[1,23]
+
+LHR6 <- (20*cox_SM1$coefficients[1])-(50*cox_SM1$coefficients[23])
+LHR6
+
+HR6 =exp(LHR6)
+HR6
+
+var6=(20^2)*cox_SM1$var[1,1]+(50^2)*cox_SM1$var[23,23]-(2*20*50*cox_SM1$var[1,23])
+
+se6=sqrt(var6)
+
+lcl6=exp(LHR6-1.96*se6)
+lcl6
+
+ucl6=exp(LHR6+1.96*se6)
+ucl6
+
+p6=2*pnorm(LHR6/se6)
+p6
+
+```
+
+## substituting legume (20g/day) for Milk (200g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[22,22]
+
+cox_SM1$var[1,22]
+
+LHR8 <- (20*cox_SM1$coefficients[1])-(200*cox_SM1$coefficients[22])
+LHR8
+
+HR8 =exp(LHR8)
+HR8
+
+var8=(20^2)*cox_SM1$var[1,1]+(200^2)*cox_SM1$var[22,22]-(2*20*200*cox_SM1$var[1,22])
+
+se8=sqrt(var8)
+
+lcl8=exp(LHR8-1.96*se8)
+lcl8
+
+ucl8=exp(LHR8+1.96*se8)
+ucl8
+
+p8=2*pnorm(-LHR8/se8)
+p8
+
+```
+
+## substituting legume (20g/day) for Yogurt (70g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[25,25]
+
+cox_SM1$var[1,25]
+
+LHR9 <- (20*cox_SM1$coefficients[1])-(70*cox_SM1$coefficients[25])
+LHR9
+
+HR9 =exp(LHR9)
+HR9
+
+var9=(20^2)*cox_SM1$var[1,1]+(70^2)*cox_SM1$var[25,25]-(2*20*70*cox_SM1$var[1,25])
+
+se9=sqrt(var9)
+
+lcl9=exp(LHR9-1.96*se9)
+lcl9
+
+ucl9=exp(LHR9+1.96*se9)
+ucl9
+
+p9=2*pnorm(-LHR9/se9)
+p9
+
+```
+
+
+## substituting legume (20g/day) for Cheese (30g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[26,26]
+
+cox_SM1$var[1,26]
+
+LHR10 <- (20*cox_SM1$coefficients[1])-(30*cox_SM1$coefficients[26])
+LHR10
+
+HR10 =exp(LHR10)
+HR10
+
+var10=(20^2)*cox_SM1$var[1,1]+(30^2)*cox_SM1$var[26,26]-(2*20*30*cox_SM1$var[1,26])
+
+se10=sqrt(var10)
+
+lcl10=exp(LHR10-1.96*se10)
+lcl10
+
+ucl10=exp(LHR10+1.96*se10)
+ucl10
+
+p10=2*pnorm(-LHR10/se10)
+p10
+```
+
+## substituting legume (20g/day) for Cereals (30g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[27,27]
+
+cox_SM1$var[1,27]
+
+LHR11 <- (20*cox_SM1$coefficients[1])-(30*cox_SM1$coefficients[27])
+LHR11
+
+HR11 =exp(LHR11)
+HR11
+
+var11=(20^2)*cox_SM1$var[1,1]+(30^2)*cox_SM1$var[27,27]-(2*20*30*cox_SM1$var[1,27])
+
+se11=sqrt(var11)
+
+lcl11=exp(LHR11-1.96*se11)
+lcl11
+
+ucl11=exp(LHR11+1.96*se11)
+ucl11
+
+p11=2*pnorm(-LHR11/se11)
+p11
+```
+
+## substituting legume (20g/day) for Nut (10g/day)
+
+```{r}
+cox_SM1$var[1,1]
+
+cox_SM1$var[28,28]
+
+cox_SM1$var[1,28]
+
+LHR12 <- (20*cox_SM1$coefficients[1])-(10*cox_SM1$coefficients[28])
+LHR12
+
+HR12 =exp(LHR12)
+HR12
+
+var12=(20^2)*cox_SM1$var[1,1]+(10^2)*cox_SM1$var[28,28]-(2*20*10*cox_SM1$var[1,28])
+
+se12=sqrt(var12)
+
+lcl12=exp(LHR12-1.96*se12)
+lcl12
+
+ucl12=exp(LHR12+1.96*se12)
+ucl12
+
+p12=2*pnorm(LHR12/se12)
+p12
+
+```
+
+## Visualization of hazard ratio's with Forest plot
+
+```{r}
+### Visualize with Forest
+#install.packages("forestplot")
+library(forestplot)
+
+#Creating data frame of substitutional analysis
+data <- structure(list(mean  = c(NA, NA, 0.89, 0.96, 0.95, 0.99, 0.88, 0.94, 1.04, 1.15, 1.06, 1.00, 0.97), 
+                                      lower = c(NA, NA, 0.77, 0.83, 0.80, 0.82, 0.75, 0.74, 0.90, 0.98, 0.91, 0.91, 0.85),
+                                      upper = c(NA, NA, 1.02, 1.12, 1.16, 1.21, 1.04, 1.21, 1.19, 1.34, 1.24, 1.10, 1.11)),
+                                 .Names = c("mean", "lower", "upper"),
+                                 row.names = c(NA, -11L), 
+                                 class = "data.frame")
+
+text <- cbind(c("", "Food", "Red Meat", "White Meat", "Processed Meat", "White Fish",
+                "Fatty Fish","Egg", "Milk", "Yogurt", "Cheese", "Cereals", "Nut"),
+              c("", "Serving size", '50g', '50g', '50g', '50g', '50g', '50g', "200g",
+                "70g", "30g", "30g", "10g"),
+                   c("", "HRs (95% CI)", '0.89 (0.77,1.02)', '0.96 (0.83,1.12)', 
+                     '0.95 (0.80,1.16)', '0.99 (0.82,1.21)', '0.88 (0.75,1.04)', '0.94 (0.74,1.21)',
+                     '1.04 (0.90,1.19)','1.15 (0.98,1.34)','1.06 (0.91,1.24)','1.00 (0.91,1.10)',
+                     '0.97 (0.85,1.11)'))
+
+
+data %>% 
+  forestplot(labeltext = text, 
+             clip = c(0.70, 1.35), 
+             xlog = TRUE, 
+             col = fpColors(box = "black",
+                            line = "black"))
+
+
+```
+
+################################################################################
+## Secondary Analysis
+################################################################################
+
+## Including peanuts in the analysis to check whether the results of including or not including peanuts makes a difference in association
+################################################################################
+## Total Legume with peanut
+################################################################################
+```{r}
+#Quartiles rank of the legume (with peanut)
+dff <- dff %>% 
+  group_by(Total_legumes_n) %>%
+  mutate(legume_rank = ntile(Total_legumes,3))
+
+dff$legume_rank[dff$Total_legumes==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of legume 
+
+dff %>%
+  group_by(legume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Total_legumes), #Calculating mean
+    median = median(Total_legumes), #Calculating median
+    sd= sd(Total_legumes), #Calculating standard deviation
+    IQF = IQR(Total_legumes), #Calculating inter-quartile range
+    QR1 = quantile(Total_legumes, 0.25), 
+    QR3 = quantile(Total_legumes, 0.75))
+
+
+#Energy-adjusted average total and types of legume consumption (Residual Method) 
+# Residual method
+regress = lm(dff$Total_legumes~dff$D1_NUT064)
+summary(regress)
+
+# Create a variable called legume_residual, which contains the residuals from the
+# regression model
+dff$legume_residual = residuals(regress)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted legume intake
+# when energy intake=sample mean
+
+predlegume = regress$coefficients[1]+regress$coefficients[2]*EI_mean
+
+# Generate a variable called ea_legume which is energy-adjusted legume intake
+dff$ea_legume=dff$legume_residual+predlegume  
+
+dff$ea_legume[dff$Total_legumes == 0] <- 0
+
+#Quartiles rank of the energy adjusted legume with peanut
+
+dff <- dff %>% 
+  group_by(Total_legumes_n) %>%
+  mutate(legume_rankeap = ntile(ea_legume,3))
+
+dff$legume_rankeap[dff$Total_legumes==0] <- 0
+
+
+# Energy-adjusted legume intake for each category
+
+dff %>%
+  group_by(legume_rankeap) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legume), #Calculating mean
+    median = median(ea_legume), #Calculating median
+    sd= sd(ea_legume), #Calculating standard deviation
+    IQF = IQR(ea_legume), #Calculating inter-quartile range
+    QR1 = quantile(ea_legume, 0.25), 
+    QR3 = quantile(ea_legume, 0.75))
+
+#Checking distribution of cases in each group of legumes
+table(dff$legume_rankeap, dff$DM_INC08)
+
+dff %>%
+  group_by(legume_rankeap)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+#Creating a variable for median consumption of each group
+dff$LCMedianeap<-dff$legume_rankeap
+dff$LCMedianeap[dff$legume_rankeap == 1] <- 0
+dff$LCMedianeap[dff$legume_rankeap == 2] <- 4.47
+dff$LCMedianeap[dff$legume_rankeap == 3] <- 12.90
+dff$LCMedianeap[dff$legume_rankeap == 4] <- 27.91
+
+dff$LCMedianeap <- as.numeric(dff$LCMedianeap)
+
+dff <- dff %>% mutate(legumepsvg = ea_legume/20)
+
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~legume_rankeap)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Legume with peanut consumption (Non-consumer and Tertiles of Consumer(0,1,2,3))
+legume_rankeap <- factor(dff$legume_rankeap, levels=c(0,1,2,3))
+
+cox_GP <- coxph(dff.surv~legume_rankeap)
+summary(cox_GP)
+
+cox_GPC <- coxph(dff.surv~legumepsvg)
+summary(cox_GPC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1P <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankeap+
+                   SEX)
+summary(cox_M1P)
+
+cox_M1PC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                   SEX)
+summary(cox_M1PC)
+
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2P <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankeap+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2P)
+
+cox_M2PC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2PC)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3P <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankeap+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3P)
+
+cox_M3PC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3PC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4P <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankeap+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4P)
+
+cox_M4PC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4PC)
+```
+################################################################################
+#Peanut
+################################################################################
+```{r}
+#Separating Non-consumer and Consumer of peanut
+dff <- dff %>% 
+  mutate(Peanut_n=case_when(PEANUTQUANT_SUM==0~1,
+                         PEANUTQUANT_SUM!=0~2))
+
+#Quartiles rank of the peanut
+dff <- dff %>% 
+  group_by(Peanut_n) %>%
+  mutate(P_rank = ntile(PEANUTQUANT_SUM,3)) %>%
+  ungroup()
+
+dff$P_rank[dff$PEANUTQUANT_SUM==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of peanut 
+dff %>%
+  group_by(P_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(PEANUTQUANT_SUM), #Calculating mean
+    median = median(PEANUTQUANT_SUM), #Calculating median
+    sd= sd(PEANUTQUANT_SUM), #Calculating standard deviation
+    IQF = IQR(PEANUTQUANT_SUM), #Calculating inter-quartile range
+    QR1 = quantile(PEANUTQUANT_SUM, 0.25), 
+    QR3 = quantile(PEANUTQUANT_SUM, 0.75))%>%
+  ungroup()
+
+
+#Energy-adjusted average peanut consumption (Residual Method) 
+# Residual method
+pregress = lm(dff$PEANUTQUANT_SUM~dff$D1_NUT064)
+summary(pregress)
+
+# Create a variable called peanut_residual, which contains the residuals from the
+# Regression model
+dff$peanut_residual = residuals(pregress)
+# Calculate the sample mean energy intake
+EI_mean = mean(dff$D1_NUT064)
+
+# Use the coefficients from the regression model to calculate predicted peanut intake
+# when energy intake=sample mean
+predpeanut = pregress$coefficients[1]+pregress$coefficients[2]*EI_mean
+
+# Generate a variable called ea_legume which is energy-adjusted peanut intake
+dff$ea_peanut=dff$peanut_residual+predpeanut  
+
+dff$ea_peanut[dff$PEANUTQUANT_SUM == 0] <- 0
+
+#Quartiles rank of the energy adjusted peanut
+
+dff <- dff %>% 
+  group_by(Peanut_n) %>%
+  mutate(P_ranke = ntile(ea_peanut,3))
+
+dff$P_ranke[dff$PEANUTQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted peanut intake for each category
+dff %>%
+  group_by(P_ranke) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_peanut), #Calculating mean
+    median = median(ea_peanut), #Calculating median
+    sd= sd(ea_peanut), #Calculating standard deviation
+    IQF = IQR(ea_peanut), #Calculating inter-quartile range
+    QR1 = quantile(ea_peanut, 0.25), 
+    QR3 = quantile(ea_peanut, 0.75))
+
+#Checking distribution of cases in each group of peanut
+table(dff$P_ranke, dff$DM_INC08)
+
+dff %>%
+  group_by(P_ranke)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+#Creating a variable for median consumption of each group
+dff$PMediane<-dff$P_ranke
+dff$PMediane[dff$P_ranke == 1] <- 0
+dff$PMediane[dff$P_ranke == 2] <- 0.94
+dff$PMediane[dff$P_ranke == 3] <- 3.52
+dff$PMediane[dff$P_ranke == 4] <- 10.84
+
+dff$PMediane <- as.numeric(dff$PMediane)
+
+dff <- dff %>% mutate(peanutsvg = ea_peanut/20)
+
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~P_ranke)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+#Univariate Model
+#Peanut consumption (Non-consumer and Tertiles of Consumer(0,1,2,3))
+P_ranke <- factor(dff$P_ranke, levels=c(0,1,2,3))
+
+cox_GPE <- coxph(dff.surv~P_ranke)
+summary(cox_GPE)
+
+cox_GPEC <- coxph(dff.surv~peanutsvg)
+summary(cox_GPEC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+
+                   SEX)
+summary(cox_M1PE)
+
+cox_M1PEC <- coxph(Surv(entryage, exitage, DM_INC08)~peanutsvg+
+                   SEX)
+summary(cox_M1PEC)
+
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2PE)
+
+cox_M2PEC <- coxph(Surv(entryage, exitage, DM_INC08)~peanutsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2PEC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+peanutsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3PE)
+
+cox_M3PEC <- coxph(Surv(entryage, exitage, DM_INC08)~peanutsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3PEC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4PE <- coxph(Surv(entryage, exitage, DM_INC08)~P_ranke+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4PE)
+
+cox_M4PEC <- coxph(Surv(entryage, exitage, DM_INC08)~peanutsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4PEC)
+```
+
+
+
+
+
+################################################################################
+## Legume, by type of dishes
+##Dried and cooked beans/lentils
+################################################################################
+
+```{r}
+#Separating Non-consumer and Consumer of Dried and cooked beans/lentils
+dff <- dff %>% 
+  mutate(DCBeans_n=case_when(DCBeans==0~1,
+                         DCBeans!=0~2))
+
+#Quartiles rank of the Dried and cooked beans/lentils
+dff <- dff %>% 
+  group_by(DCBeans_n) %>%
+  mutate(DC_rank = ntile(DCBeans,3))
+
+dff$DC_rank[dff$DCBeans==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of Dried and cooked beans/lentils
+
+dff %>%
+  group_by(DC_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(DCBeans), #Calculating mean
+    median = median(DCBeans), #Calculating median
+    sd= sd(DCBeans), #Calculating standard deviation
+    IQF = IQR(DCBeans), #Calculating inter-quartile range
+    QR1 = quantile(DCBeans, 0.25), 
+    QR3 = quantile(DCBeans, 0.75))
+
+
+#Checking distribution of cases in each group of Dried and cooked beans/lentils
+table(dff$DC_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(DC_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+```
+
+```{r}
+#Creating a variable for median consumption of each group
+dff$DCLCMedian<-dff$DC_rank
+dff$DCLCMedian[dff$DC_rank == 1] <- 0
+dff$DCLCMedian[dff$DC_rank == 2] <- 5.49
+dff$DCLCMedian[dff$DC_rank == 3] <- 11.43
+dff$DCLCMedian[dff$DC_rank == 4] <- 24.34
+
+dff$DCLCMedian <- as.numeric(dff$DCLCMedian)
+
+
+dff <- dff %>% mutate(DCsvg = DCBeans/20)
+
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~DC_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+#Univariate Model
+#Dried and cooked beans/lentils (Non-consumer and Tertile of Consumer(0,1,2,3))
+DC_rank <- factor(dff$DC_rank, levels=c(0,1,2,3))
+
+cox_GC <- coxph(dff.surv~DC_rank)
+summary(cox_GC)
+
+cox_GCC <- coxph(dff.surv~DCsvg)
+summary(cox_GCC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1C <- coxph(Surv(entryage, exitage, DM_INC08)~DC_rank+
+                   SEX)
+summary(cox_M1C)
+
+cox_M1CC <- coxph(Surv(entryage, exitage, DM_INC08)~DCsvg+
+                   SEX)
+summary(cox_M1CC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2C <- coxph(Surv(entryage, exitage, DM_INC08)~DC_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2C)
+
+cox_M2CC <- coxph(Surv(entryage, exitage, DM_INC08)~DCsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2CC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3C <- coxph(Surv(entryage, exitage, DM_INC08)~DC_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3C)
+
+cox_M3CC <- coxph(Surv(entryage, exitage, DM_INC08)~DCsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3CC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4C <- coxph(Surv(entryage, exitage, DM_INC08)~DC_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4C)
+
+cox_M4CC <- coxph(Surv(entryage, exitage, DM_INC08)~DCsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4CC)
+```
+
+################################################################################
+##Canned beans in sauce
+################################################################################
+```{r}
+#Separating Non-consumer and Consumer of Canned beans in sauce
+dff <- dff %>% 
+  mutate(DCanned_n=case_when(DCanned==0~1,
+                         DCanned!=0~2))
+
+
+#Quartiles rank of the Canned beans in sauce
+
+dff <- dff %>% 
+  group_by(DCanned_n) %>%
+  mutate(DCanned_rank = ntile(DCanned,3))
+
+dff$DCanned_rank[dff$DCanned==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of Canned beans in sauce
+
+dff %>%
+  group_by(DCanned_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(DCanned), #Calculating mean
+    median = median(DCanned), #Calculating median
+    sd= sd(DCanned), #Calculating standard deviation
+    IQF = IQR(DCanned), #Calculating inter-quartile range
+    QR1 = quantile(DCanned, 0.25), 
+    QR3 = quantile(DCanned, 0.75))
+
+
+#Checking distribution of cases in each group of Canned beans in sauce
+table(dff$DCanned_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(DCanned_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+```
+
+```{r}
+
+#Creating a variable for median consumption of each group
+dff$CLCMedian<-dff$DCanned_rank
+dff$CLCMedian[dff$DCanned_rank == 1] <- 0
+dff$CLCMedian[dff$DCanned_rank == 2] <- 7.74
+dff$CLCMedian[dff$DCanned_rank == 3] <- 13.62
+dff$CLCMedian[dff$DCanned_rank == 4] <- 23.72
+
+dff$CLCMedian <- as.numeric(dff$CLCMedian)
+
+dff <- dff %>% mutate(Cannedsvg = DCanned/20)
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~DCanned_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Canned beans in sauce consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+DCanned_rank <- factor(dff$DCanned_rank, levels=c(0,1,2,3))
+
+cox_GD <- coxph(dff.surv~DCanned_rank)
+summary(cox_GD)
+
+cox_GDC <- coxph(dff.surv~Cannedsvg)
+summary(cox_GDC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1D <- coxph(Surv(entryage, exitage, DM_INC08)~DCanned_rank+
+                   SEX)
+summary(cox_M1D)
+
+cox_M1DC <- coxph(Surv(entryage, exitage, DM_INC08)~Cannedsvg+
+                   SEX)
+summary(cox_M1DC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2D <- coxph(Surv(entryage, exitage, DM_INC08)~DCanned_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2D)
+
+cox_M2DC <- coxph(Surv(entryage, exitage, DM_INC08)~Cannedsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2DC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3D <- coxph(Surv(entryage, exitage, DM_INC08)~DCanned_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3D)
+
+cox_M3DC <- coxph(Surv(entryage, exitage, DM_INC08)~Cannedsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3DC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4D <- coxph(Surv(entryage, exitage, DM_INC08)~DCanned_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4D)
+
+cox_M4DC <- coxph(Surv(entryage, exitage, DM_INC08)~Cannedsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4DC)
+```
+
+################################################################################
+##Legume, Vegetable dishes
+################################################################################
+
+```{r}
+#Separating Non-consumer and Consumer of Vegetables dish
+dff <- dff %>% 
+  mutate(Veg_n=case_when(Vegetables_dish_legume==0~1,
+                         Vegetables_dish_legume!=0~2))
+
+
+#Quartiles rank of the legume (vegetable dish)
+
+dff <- dff %>% 
+  group_by(Veg_n) %>%
+  mutate(vdish_rank = ntile(Vegetables_dish_legume,3))
+
+dff$vdish_rank[dff$Vegetables_dish_legume==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of legume (vegetable dish) 
+dff %>%
+  group_by(vdish_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Vegetables_dish_legume), #Calculating mean
+    median = median(Vegetables_dish_legume), #Calculating median
+    sd= sd(Vegetables_dish_legume), #Calculating standard deviation
+    IQF = IQR(Vegetables_dish_legume), #Calculating inter-quartile range
+    QR1 = quantile(Vegetables_dish_legume, 0.25), 
+    QR3 = quantile(Vegetables_dish_legume, 0.75))
+
+
+#Checking distribution of cases in each group of legumes
+table(dff$vdish_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(vdish_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+```
+
+```{r}
+#Creating a variable for median consumption of each group
+dff$VLCMedian<-dff$vdish_rank
+dff$VLCMedian[dff$vdish_rank == 1] <- 0
+dff$VLCMedian[dff$vdish_rank == 2] <- 1.36
+dff$VLCMedian[dff$vdish_rank == 3] <- 5.36
+dff$VLCMedian[dff$vdish_rank == 4] <- 14.81
+
+dff$VLCMedian <- as.numeric(dff$VLCMedian)
+
+dff <- dff %>% mutate(Vegsvg = Vegetables_dish_legume/20)
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~vdish_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+#Univariate Model
+#Legume consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+vdish_rank <- factor(dff$vdish_rank, levels=c(0,1,2,3))
+
+cox_GV <- coxph(dff.surv~vdish_rank)
+summary(cox_GV)
+
+cox_GVC <- coxph(dff.surv~Vegsvg)
+summary(cox_GVC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1V <- coxph(Surv(entryage, exitage, DM_INC08)~vdish_rank+
+                   SEX)
+summary(cox_M1V)
+
+cox_M1VC <- coxph(Surv(entryage, exitage, DM_INC08)~Vegsvg+
+                   SEX)
+summary(cox_M1VC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2V <- coxph(Surv(entryage, exitage, DM_INC08)~vdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2V)
+
+cox_M2VC <- coxph(Surv(entryage, exitage, DM_INC08)~Vegsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2VC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3V <- coxph(Surv(entryage, exitage, DM_INC08)~vdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3V)
+
+cox_M3VC <- coxph(Surv(entryage, exitage, DM_INC08)~Vegsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3VC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4V <- coxph(Surv(entryage, exitage, DM_INC08)~vdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4V)
+
+cox_M4VC <- coxph(Surv(entryage, exitage, DM_INC08)~Vegsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4VC)
+```
+
+################################################################################
+## Legume, Meat dishes
+################################################################################
+
+```{r}
+#Separating Non-consumer and Consumer of Meat dish
+dff <- dff %>% 
+  mutate(Meat_n=case_when(Meat_dish_legume==0~1,
+                          Meat_dish_legume!=0~2))
+
+
+#Quartiles rank of the legume (Meat dish)
+dff <- dff %>% 
+  group_by(Meat_n) %>%
+  mutate(mdish_rank = ntile(Meat_dish_legume,3))%>%
+  ungroup()
+
+dff$mdish_rank[dff$Meat_dish_legume==0] <- 0
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of legume (Meat dish) 
+
+dff %>%
+  group_by(mdish_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Meat_dish_legume), #Calculating mean
+    median = median(Meat_dish_legume), #Calculating median
+    sd= sd(Meat_dish_legume), #Calculating standard deviation
+    IQF = IQR(Meat_dish_legume), #Calculating inter-quartile range
+    QR1 = quantile(Meat_dish_legume, 0.25), 
+    QR3 = quantile(Meat_dish_legume, 0.75))%>%
+  ungroup()
+
+
+#Checking distribution of cases in each group
+table(dff$mdish_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(mdish_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))%>%
+  ungroup()
+```
+
+
+```{r}
+#Creating a variable for median consumption of each group
+dff$MLCMedian<-dff$mdish_rank
+dff$MLCMedian[dff$mdish_rank == 1] <- 0
+dff$MLCMedian[dff$mdish_rank == 2] <- 3.27
+dff$MLCMedian[dff$mdish_rank == 3] <- 4.86
+dff$MLCMedian[dff$mdish_rank == 4] <- 11.10
+
+dff$MLCMedian <- as.numeric(dff$MLCMedian)
+
+dff <- dff %>% mutate(Msvg = Meat_dish_legume/20)
+```
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~mdish_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Meat dish legume consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+mdish_rank <- factor(dff$mdish_rank, levels=c(0,1,2,3))
+
+cox_GM <- coxph(dff.surv~mdish_rank)
+summary(cox_GM)
+
+cox_GMC <- coxph(dff.surv~Msvg)
+summary(cox_GMC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1M <- coxph(Surv(entryage, exitage, DM_INC08)~mdish_rank+
+                   SEX)
+summary(cox_M1M)
+
+cox_M1MC <- coxph(Surv(entryage, exitage, DM_INC08)~Msvg+
+                   SEX)
+summary(cox_M1MC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2M <- coxph(Surv(entryage, exitage, DM_INC08)~mdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2M)
+
+cox_M2MC <- coxph(Surv(entryage, exitage, DM_INC08)~Msvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2MC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3M <- coxph(Surv(entryage, exitage, DM_INC08)~mdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3M)
+
+cox_M3MC <- coxph(Surv(entryage, exitage, DM_INC08)~Msvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3MC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4M <- coxph(Surv(entryage, exitage, DM_INC08)~mdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4M)
+
+cox_M4MC <- coxph(Surv(entryage, exitage, DM_INC08)~Msvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4MC)
+```
+################################################################################
+## Legume, Fish dishes
+################################################################################
+```{r}
+#Separating Non-consumer and Consumer of Fish dish
+dff <- dff %>% 
+  mutate(Fish_n=case_when(Fish_dish_legume==0~1,
+                          Fish_dish_legume!=0~2))
+
+
+#Quartiles rank of the legume (Fish dish)
+dff <- dff %>% 
+  group_by(Fish_n) %>%
+  mutate(fdish_rank = ntile(Fish_dish_legume,3)) %>%
+  ungroup()
+
+dff$fdish_rank[dff$Fish_dish_legume==0] <- 0
+
+
+
+#Calculating mean, standard deviation, median and inter-quartiles range of legume (Fish dish) 
+
+dff %>%
+  group_by(fdish_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Fish_dish_legume), #Calculating mean
+    median = median(Fish_dish_legume), #Calculating median
+    sd= sd(Fish_dish_legume), #Calculating standard deviation
+    IQF = IQR(Fish_dish_legume) #Calculating inter-quartile range
+  ) %>%
+  ungroup()
+
+
+#Checking distribution of cases in each group
+table(dff$fdish_rank, dff$DM_INC08)
+
+```
+
+```{r}
+#Creating a variable for median consumption of each group
+dff$FLCMedian<-dff$fdish_rank
+dff$FLCMedian[dff$fdish_rank == 1] <- 0
+dff$FLCMedian[dff$fdish_rank == 2] <- 3.20
+dff$FLCMedian[dff$fdish_rank == 3] <- 5.30
+dff$FLCMedian[dff$fdish_rank == 4] <- 8.23
+
+dff$FLCMedian <- as.numeric(dff$FLCMedian)
+
+
+dff <- dff %>% mutate(Fsvg = Fish_dish_legume/20)
+```
+
+
+# Creating survival object
+
+```{r}
+attach(dff)
+
+dff.surv <- Surv(TimetoEvent, DM_INC08)
+
+survdiff(dff.surv~fdish_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+
+#Univariate Model
+
+#Fish dish legume consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+fdish_rank <- factor(dff$fdish_rank, levels=c(0,1,2,3))
+
+cox_GF <- coxph(dff.surv~fdish_rank)
+summary(cox_GF)
+
+cox_GFC <- coxph(dff.surv~Fsvg)
+summary(cox_GFC)
+
+#Multivariate Model
+
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1F <- coxph(Surv(entryage, exitage, DM_INC08)~fdish_rank+
+                   SEX)
+summary(cox_M1F)
+
+cox_M1FC <- coxph(Surv(entryage, exitage, DM_INC08)~Fsvg+
+                   SEX)
+summary(cox_M1FC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2F <- coxph(Surv(entryage, exitage, DM_INC08)~fdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2F)
+
+cox_M2FC <- coxph(Surv(entryage, exitage, DM_INC08)~Fsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2FC)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3F <- coxph(Surv(entryage, exitage, DM_INC08)~fdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3F)
+
+
+cox_M3FC <- coxph(Surv(entryage, exitage, DM_INC08)~Fsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3FC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4F <- coxph(Surv(entryage, exitage, DM_INC08)~fdish_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4F)
+
+cox_M4FC <- coxph(Surv(entryage, exitage, DM_INC08)~Fsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4FC)
+
+```
+
+################################################################################
+## Analysis among consumer of legume only
+################################################################################
+## Legume with Peanut
+################################################################################
+```{r}
+# Total legume consumer
+dffCTLP <- dff %>% filter(dff$Total_legumes!=0)
+
+#Quartile rank of the legume consumer
+dffCTLP <- dffCTLP %>%
+  mutate(CPlegume_rank = ntile(Total_legumes,4))
+
+#Legume intake for each category
+dffCTLP %>%
+  group_by(CPlegume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(Total_legumes), #Calculating mean
+    median = median(Total_legumes), #Calculating median
+    sd= sd(Total_legumes), #Calculating standard deviation
+    IQF = IQR(Total_legumes) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffCTLP$CPlegume_rank, dffCTLP$DM_INC08)
+
+
+#Creating a variable for median consumption of each group
+dffCTLP$LCMedianCTLP<-dffCTLP$CPlegume_rank
+
+dffCTLP$LCMedianCTLP[dffCTLP$CPlegume_rank == 1] <- 3.52
+dffCTLP$LCMedianCTLP[dffCTLP$CPlegume_rank == 2] <- 9.95
+dffCTLP$LCMedianCTLP[dffCTLP$CPlegume_rank == 3] <- 16.03
+dffCTLP$LCMedianCTLP[dffCTLP$CPlegume_rank == 4] <- 32.02
+
+
+dffCTLP$LCMedianCTLP <- as.numeric(dffCTLP$LCMedianCTLP)
+
+```
+
+
+```{r}
+attach(dffCTLP) # Attaching datasets
+```
+
+
+```{r}
+#Checking distribution of cases in each group of legume
+
+table(dffCTLP$CPlegume_rank, dffCTLP$DM_INC08)
+
+sum(dffCTLP$TimetoEvent)
+
+dffCTLP %>%
+  group_by(CPlegume_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+CPlegume_rank <- factor(dffCTLP$CPlegume_rank, levels=c(1,2,3,4))
+survdiff(dff.surv~CPlegume_rank)  #Log rank test
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Quartile of Consumer(1,2,3,4))
+cox_GCTCP <- coxph(dff.surv~CPlegume_rank)
+summary(cox_GCTCP)
+
+cox_GCTCPC <- coxph(dff.surv~legumepsvg)
+summary(cox_GCTCPC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dffCTLP$SEX, levels=c(1,2))
+
+cox_M1CTCP <- coxph(Surv(entryage, exitage, DM_INC08)~CPlegume_rank+
+                  strata(SEX))
+summary(cox_M1CTCP)
+
+cox_M1CTCPC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                  strata(SEX))
+summary(cox_M1CTCPC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dffCTLP$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffCTLP$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffCTLP$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffCTLP$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2CTCP <- coxph(Surv(entryage, exitage, DM_INC08)~CPlegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2CTCP)
+
+cox_M2CTCPC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2CTCPC)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dffCTLP$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffCTLP$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffCTLP$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffCTLP$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3CTCP <- coxph(Surv(entryage, exitage, DM_INC08)~CPlegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA)
+summary(cox_M3CTCP)
+
+cox_M3CTCPC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA)
+summary(cox_M3CTCPC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dffCTLP$WAIST_Class, levels=c(1,2))
+cox_M4CTCP <- coxph(Surv(entryage, exitage, DM_INC08)~CPlegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4CTCP)
+
+cox_M4CTCPC <- coxph(Surv(entryage, exitage, DM_INC08)~legumepsvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4CTCPC)
+
+phtestCTLP <-cox.zph(cox_M4CTCP)
+phtestCTLP
+
+ggcoxzph(phtestCTLP)
+
+```
+################################################################################
+## Legume without Peanut
+################################################################################
+```{r}
+# Total legume consumer
+
+dffCTL <- dff %>% filter(dff$LENTILQUANT_SUM!=0)
+
+#Tertiles rank of the legume consumer
+dffCTL <- dffCTL %>%
+  mutate(Clegume_rank = ntile(LENTILQUANT_SUM,4))
+
+#Legume intake for each category
+dffCTL %>%
+  group_by(Clegume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(LENTILQUANT_SUM), #Calculating mean
+    median = median(LENTILQUANT_SUM), #Calculating median
+    sd= sd(LENTILQUANT_SUM), #Calculating standard deviation
+    IQF = IQR(LENTILQUANT_SUM) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffCTL$Clegume_rank, dffCTL$DM_INC08)
+
+sum(dffCTL$TimetoEvent)
+
+dffCTL %>%
+  group_by(Clegume_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+#Creating a variable for median consumption of each group
+dffCTL$LCMedianCTL<-dffCTL$Clegume_rank
+
+dffCTL$LCMedianCTL[dffCTL$Clegume_rank == 1] <- 4.99
+dffCTL$LCMedianCTL[dffCTL$Clegume_rank == 2] <- 9.97
+dffCTL$LCMedianCTL[dffCTL$Clegume_rank == 3] <- 15.71
+dffCTL$LCMedianCTL[dffCTL$Clegume_rank == 4] <- 31.16
+
+
+dffCTL$LCMedianCTL <- as.numeric(dffCTL$LCMedianCTL)
+
+```
+
+
+```{r}
+attach(dffCTL) # Attaching datasets
+```
+
+
+```{r}
+
+#Checking distribution of cases in each group of legume
+
+table(dffCTL$Clegume_rank, dffCTL$DM_INC08)
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+Clegume_rank <- factor(dffCTL$Clegume_rank, levels=c(1,2,3,4))
+
+survdiff(dff.surv~Clegume_rank)  #Log rank test
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Quartile of Consumer(1,2,3))
+cox_GCTC <- coxph(dff.surv~Clegume_rank)
+summary(cox_GCTC)
+
+cox_GCTCC <- coxph(dff.surv~legumesvg)
+summary(cox_GCTCC)
+
+#Multivariate Model
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dffCTL$SEX, levels=c(1,2))
+
+cox_M1CTC <- coxph(Surv(entryage, exitage, DM_INC08)~Clegume_rank+
+                  strata(SEX))
+summary(cox_M1CTC)
+
+cox_M1CTCC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  strata(SEX))
+summary(cox_M1CTCC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dffCTL$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffCTL$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffCTL$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffCTL$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2CTC <- coxph(Surv(entryage, exitage, DM_INC08)~Clegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2CTC)
+
+cox_M2CTCC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2CTCC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dffCTL$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffCTL$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffCTL$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffCTL$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3CTC <- coxph(Surv(entryage, exitage, DM_INC08)~Clegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA)
+summary(cox_M3CTC)
+
+cox_M3CTCC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA)
+summary(cox_M3CTCC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dffCTL$WAIST_Class, levels=c(1,2))
+cox_M4CTC <- coxph(Surv(entryage, exitage, DM_INC08)~Clegume_rank+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4CTC)
+
+cox_M4CTCC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  strata(SEX)+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+FH_MI+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4CTCC)
+
+phtestCTL <-cox.zph(cox_M4CTC)
+phtestCTL
+
+ggcoxzph(phtestCTL)
+
+```
+
+
+## Explatory (Post-hoc analysis) for seasonality of legume consumption
+
+#Creating and recoding variables for season
+```{r}
+#Separating month from date
+dff <- dff%>%
+  mutate(Months=format(NDATE,"%m"))
+
+dff$Months <- as.numeric(dff$Months)
+
+#Creating variables for season
+dff <- dff %>% 
+  mutate(Season=case_when(Months==12| Months == 1 | Months == 2~1,
+                          Months==3| Months == 4 | Months == 5~2,
+                          Months==6| Months == 7 | Months == 8~3,
+                          Months==9| Months == 10 | Months == 11~4))
+```
+
+
+```{r}
+## Fitting a sinusoidal model
+fit <- lm(LENTILQUANT_SUM~sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12), data=dff)
+summary(fit)
+
+## Repeating analysis with sine and cosine terms of time
+
+## Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+attach(dff)
+
+## Univariate Model
+
+#Legume consumption (Quartile of Consumer(0,1,2,3))
+legume_rankea <- factor(dff$legume_rankea, levels=c(0,1,2,3))
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+cox_S <- coxph(dff.surv~legume_rankea+sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12))
+summary(cox_S)
+
+
+cox_SC <- coxph(dff.surv~legumesvge+sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12))
+summary(cox_SC)
+
+
+## Multivariate Model
+
+#Model 1: Adjusted for age,  sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_MS1 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                  SEX)
+summary(cox_MS1)
+
+cox_MS1C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX)
+summary(cox_MS1C)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+Season <- factor(dff$Season, levels=c(1,2,3,4))
+
+cox_MS2 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_MS2)
+
+cox_MS2C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                   sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+strata(Season)) 
+summary(cox_MS2C)
+
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_MS3 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MS3)
+
+
+cox_MS3C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                   sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+strata(Season)+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_MS3C)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+
+# Categories of total legume consumption
+cox_MS4 <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                  sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_MS4)
+
+# Continous(Servings of total legume consumption)
+cox_MS4C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                   sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+strata(Season)+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MS4C)
+
+
+
+# Categories of total legume consumption
+cox_MS4S <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankea+
+                   sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_MS4S)
+
+# Continous(Servings of total legume consumption)
+cox_MS4CS <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                    sin((2*3.1416*Months)/12)+cos((2*3.1416*Months)/12)+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+strata(Season)+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_MS4CS)
+```
+
+
+################################################################################
+## Sensitivity Analysis 1
+##Repeating the models without the residual method for energy adjustment
+################################################################################
+## Total Legume
+################################################################################
+
+```{r}
+attach(dff)
+```
+
+
+```{r}
+
+#Checking distribution of cases in each group of lentil
+
+table(dff$legume_rankr, dff$DM_INC08)
+
+dff %>%
+  group_by(legume_rankr)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+
+survdiff(dff.surv~legume_rankr)  #Log rank test
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+#Legume consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+legume_rankr <- factor(dff$legume_rankr, levels=c(0,1,2,3))
+cox_GS2L <- coxph(dff.surv~legume_rankr)
+summary(cox_GS2L)
+
+cox_GS2LC <- coxph(dff.surv~legumesvg)
+summary(cox_GS2LC)
+
+#Multivariate Model
+
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1S2L <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+
+                  SEX)
+summary(cox_M1S2L)
+
+cox_M1S2LC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  SEX)
+summary(cox_M1S2LC)
+
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2S2L <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2L)
+
+cox_M2S2LC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2LC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3S2L <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2L)
+
+cox_M3S2LC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2LC)
+
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4S2L <- coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4S2L)
+
+cox_M4S2LC <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M4S2LC)
+
+```
+
+
+################################################################################
+## Lentil
+################################################################################
+```{r}
+#Checking distribution of cases in each group of lentil
+table(dff$lentil_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(lentil_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+survdiff(dff.surv~lentil_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+
+#Univariate Model
+
+#Lentil consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+lentil_rank <- factor(dff$lentil_rank, levels=c(0,1,2,3))
+
+cox_GS2l <- coxph(dff.surv~lentil_rank)
+summary(cox_GS2l)
+
+cox_GS2lC <- coxph(dff.surv~lentilsvg)
+summary(cox_GS2lC)
+
+#Multivariate Model
+# Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1S2l <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rank+
+                   SEX)
+summary(cox_M1S2l)
+
+cox_M1S2lC <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvg+
+                   SEX)
+summary(cox_M1S2lC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2S2l <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2l)
+
+cox_M2S2lC <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2lC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3S2l <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2l)
+
+cox_M3S2lC <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2lC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4S2l <- coxph(Surv(entryage, exitage, DM_INC08)~lentil_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2l)
+
+cox_M4S2lC <- coxph(Surv(entryage, exitage, DM_INC08)~lentilsvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2lC)
+```
+
+
+################################################################################
+## Peas
+################################################################################
+```{r}
+#Checking distribution of cases in each group of peas
+table(dff$peas_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(peas_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+survdiff(dff.surv~peas_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+
+#Univariate Model
+
+#Peas consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+peas_rank <- factor(dff$peas_rank, levels=c(0,1,2,3))
+
+cox_GS2P <- coxph(dff.surv~peas_rank)
+summary(cox_GS2P)
+
+cox_GS2PC <- coxph(dff.surv~peasvg)
+summary(cox_GS2PC)
+
+
+#Multivariate Model
+
+#Model 1: Adjusted for age,  sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1S2P <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rank+
+                   SEX)
+summary(cox_M1S2P)
+
+cox_M1S2PC <- coxph(Surv(entryage, exitage, DM_INC08)~peasvg+
+                   SEX)
+summary(cox_M1S2PC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2S2P <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2P)
+
+cox_M2S2PC <- coxph(Surv(entryage, exitage, DM_INC08)~peasvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2PC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3S2P <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2P)
+
+cox_M3S2PC <- coxph(Surv(entryage, exitage, DM_INC08)~peasvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2PC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4S2P <- coxph(Surv(entryage, exitage, DM_INC08)~peas_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2P)
+
+cox_M4S2PC <- coxph(Surv(entryage, exitage, DM_INC08)~peasvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2PC)
+```
+
+
+################################################################################
+## Beans
+################################################################################
+```{r}
+#Checking distribution of cases in each group of beans
+table(dff$beans_rank, dff$DM_INC08)
+
+dff %>%
+  group_by(beans_rank)%>%
+  summarise(
+    count = n(),
+    PY =sum(TimetoEvent))
+
+
+# Creating survival object
+
+dff.surv <- Surv(TimetoEvent, DM_INC08) 
+
+
+survdiff(dff.surv~beans_rank)  #Log rank test
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+#Univariate Model
+
+#Beans consumption (Non-consumer and Tertile of Consumer(0,1,2,3))
+beans_rank <- factor(dff$beans_rank, levels=c(0,1,2,3))
+
+cox_GS2B <- coxph(dff.surv~beans_rank)
+summary(cox_GS2B)
+
+cox_GS2BC <- coxph(dff.surv~beansvg)
+summary(cox_GS2BC)
+
+#Multivariate Model
+
+#Model 1: Adjusted for age, sex and behavioural covariates
+SEX <- factor(dff$SEX, levels=c(1,2))
+
+cox_M1S2B <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rank+
+                   SEX)
+summary(cox_M1S2B)
+
+cox_M1S2BC <- coxph(Surv(entryage, exitage, DM_INC08)~beansvg+
+                   SEX)
+summary(cox_M1S2BC)
+
+# Model 2: Additionally Adjusted for Dietary Covariates
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+
+cox_M2S2B <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2B)
+
+cox_M2S2BC <- coxph(Surv(entryage, exitage, DM_INC08)~beansvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065)
+summary(cox_M2S2BC)
+
+# Model 3: Additionally Adjusted for Clinical Covariates
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+
+cox_M3S2B <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2B)
+
+cox_M3S2BC <- coxph(Surv(entryage, exitage, DM_INC08)~beansvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA)
+summary(cox_M3S2BC)
+
+# Model 4: Additionally Adjusted for Anthropometric Covariates
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+cox_M4S2B <- coxph(Surv(entryage, exitage, DM_INC08)~beans_rank+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2B)
+
+cox_M4S2BC <- coxph(Surv(entryage, exitage, DM_INC08)~beansvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class)
+summary(cox_M4S2BC)
+```
+
+
+################################################################################
+## Sensitivity Analysis 2
+################################################################################
+
+## Excluding participants with prevalent cancer, cardiovascular disease self-reported hypertension or hypercholesterolaemia 
+
+```{r}
+# Checking participants with prevalent cancer 
+table(dff$CA) 
+
+# Checking participants with cardiovascular disease 
+table(dff$CVA) 
+
+# Checking participants with stroke 
+table(dff$MI)
+
+# Checking participants with self-reported hypertension 
+table(dff$BP) 
+
+# Checking participants with hypercholesterolaemia
+table(dff$CHOLESTEROL) 
+
+
+# Excluding participants 
+dffS3 <- dff %>%
+  filter((dff$CA==2) 
+         & (dff$CVA==2)
+         & (dff$MI==2)
+         & (dff$BP==2)
+         & (dff$CHOLESTEROL==2))
+
+#Separating Non-consumer and Consumer of Legumes(without peanut)
+
+dffS3 <- dffS3 %>% 
+  mutate(legumes_ns3=case_when(ea_legumer==0~1,
+                               ea_legumer!=0~2))
+
+#Quartiles rank of the legume (without peanut)
+dffS3 <- dffS3 %>%
+  group_by(legumes_ns3) %>%
+  mutate(S3legume_rankea = ntile(ea_legumer,3))
+
+dffS3$S3legume_rankea[dffS3$LENTILQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted legume intake for each category
+dffS3 %>%
+  group_by(S3legume_rankea) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    IQF = IQR(ea_legumer) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffS3$S3legume_rankea, dffS3$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dffS3$LCMedianS3<-dffS3$S3legume_rankea
+
+dffS3$LCMedianS3[dffS3$S3legume_rankea == 1] <- 0
+dffS3$LCMedianS3[dffS3$S3legume_rankea == 2] <- 5.88
+dffS3$LCMedianS3[dffS3$S3legume_rankea == 3] <- 13.35
+dffS3$LCMedianS3[dffS3$S3legume_rankea == 4] <- 28.17
+
+
+dffS3$LCMedianS3 <- as.numeric(dffS3$LCMedianS3) 
+
+
+attach(dffS3) #Attaching datasets
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+# Assigning correct object class of each variables
+S3legume_rankea <- factor(dffS3$S3legume_rankea, levels=c(0,1,2,3))
+SEX <- factor(dffS3$SEX, levels=c(1,2))
+CIGSTAT <- factor(dffS3$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffS3$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffS3$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffS3$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dffS3$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffS3$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffS3$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffS3$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+WAIST_Class <- factor(dffS3$WAIST_Class, levels=c(1,2))
+
+# Adjusted Model with Covariates
+cox_M5S3 <- coxph(Surv(entryage, exitage, DM_INC08)~S3legume_rankea+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M5S3)
+
+
+cox_M5S3C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI+WAIST_Class)
+summary(cox_M5S3C)
+
+```
+
+################################################################################
+## Sensitivity Analysis 3
+################################################################################
+
+## Excluding those with incomplete food diary records (<7 days)  
+
+```{r}
+
+# Checking participants with with incomplete food diary records 
+table(dff$D1_DAYS)
+
+# Excluding participants with with incomplete food diary records 
+dffS4 <- dff %>%
+  filter((dff$D1_DAYS==7))
+
+#Separating Non-consumer and Consumer of Legumes(without peanut)
+dffS4 <- dffS4 %>% 
+  mutate(legumes_ns4=case_when(ea_legumer==0~1,
+                               ea_legumer!=0~2))
+
+#Quartiles rank of the legume (without peanut)
+dffS4 <- dffS4 %>%
+  group_by(legumes_ns4) %>%
+  mutate(S4legume_rank = ntile(ea_legumer,3))
+
+dffS4$S4legume_rank[dffS4$LENTILQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted legume intake for each category
+dffS4 %>%
+  group_by(S4legume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    IQF = IQR(ea_legumer) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffS4$S4legume_rank, dffS4$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dffS4$LCMedianS4<-dffS4$S4legume_rank
+
+dffS4$LCMedianS4[dffS4$S4legume_rank == 1] <- 0
+dffS4$LCMedianS4[dffS4$S4legume_rank == 2] <- 5.85 
+dffS4$LCMedianS4[dffS4$S4legume_rank == 3] <- 13.00
+dffS4$LCMedianS4[dffS4$S4legume_rank == 4] <- 26.67
+
+
+dffS4$LCMedianS4 <- as.numeric(dffS4$LCMedianS4)
+
+
+attach(dffS4) #Attaching datasets
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+# Assigning correct object class of each variables
+S4legume_rank <- factor(dffS4$S4legume_rank, levels=c(0,1,2,3))
+SEX <- factor(dffS4$SEX, levels=c(1,2))
+CIGSTAT <- factor(dffS4$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffS4$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffS4$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffS4$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dffS4$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffS4$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffS4$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffS4$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+WAIST_Class <- factor(dffS4$WAIST_Class, levels=c(1,2))
+
+# Adjusted Model with Covariates
+cox_M5S4 <- coxph(Surv(entryage, exitage, DM_INC08)~S4legume_rank+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S4)
+
+
+cox_M5S4C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S4C)
+
+```
+################################################################################
+## Sensitivity Analysis 4
+################################################################################
+
+## Excluding participants diagnosed with T2D within the first 2 years of follow-up
+
+```{r}
+#Checking class of date
+class(dff$NDATE)
+class(dff$DM_INC08_DATE)
+
+# Adding 2 years to Date at first health check-up
+dff$FDATE <- dff$NDATE %m+% years(2)
+
+#Finding participants diagnosed with T2D within the first 2 years of follow-up
+length(which(dff$DM_INC08_DATE>dff$FDATE))
+
+# Excluding participants with T2D within the first 2 years of follow-up 
+dffS5 <- dff %>% filter(DM_INC08_DATE>FDATE)
+
+#Separating Non-consumer and Consumer of Legumes(without peanut)
+dffS5 <- dffS5 %>% 
+  mutate(legumes_ns5=case_when(ea_legumer==0~1,
+                               ea_legumer!=0~2))
+
+#Quartiles rank of the legume (without peanut)
+dffS5 <- dffS5 %>%
+  group_by(legumes_ns5) %>%
+  mutate(S5legume_rank = ntile(ea_legumer,3))
+
+dffS5$S5legume_rank[dffS5$LENTILQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted legume intake for each category
+dffS5 %>%
+  group_by(S5legume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    IQF = IQR(ea_legumer) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffS5$S5legume_rank, dffS5$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dffS5$LCMedianS5<-dffS5$S5legume_rank
+
+dffS5$LCMedianS5[dffS5$S5legume_rank == 1] <- 0
+dffS5$LCMedianS5[dffS5$S5legume_rank == 2] <- 5.97
+dffS5$LCMedianS5[dffS5$S5legume_rank == 3] <- 13.29
+dffS5$LCMedianS5[dffS5$S5legume_rank == 4] <- 27.87
+
+
+dffS5$LCMedianS5 <- as.numeric(dffS5$LCMedianS5)
+
+
+attach(dffS5) # Attaching datasets
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+# Assigning correct object class of each variables
+S5legume_rank <- factor(dffS5$S5legume_rank, levels=c(0,1,2,3))
+SEX <- factor(dffS5$SEX, levels=c(1,2))
+CIGSTAT <- factor(dffS5$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffS5$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffS5$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffS5$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dffS5$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffS5$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffS5$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffS5$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+WAIST_Class <- factor(dffS5$WAIST_Class, levels=c(1,2))
+
+# Adjusted Model with Covariates
+cox_M5S5 <- coxph(Surv(entryage, exitage, DM_INC08)~S5legume_rank+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S5)
+
+
+cox_M5S5C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S5C)
+
+```
+################################################################################
+## Sensitivity Analysis 5
+################################################################################
+
+## Excluding those with HbA1C>=6.5% (48 mmol/mol) at baseline
+
+```{r}
+# checking participants with with HbA1C>=6.5% (48 mmol/mol) at baseline 
+
+dffS6 <- dff %>% filter((!dff$HBA1C>=6.5))
+
+#Separating Non-consumer and Consumer of Legumes(without peanut)
+dffS6 <- dffS6 %>% 
+  mutate(legumes_ns6=case_when(ea_legumer==0~1,
+                               ea_legumer!=0~2))
+
+#Quartiles rank of the legume (without peanut)
+dffS6 <- dffS6 %>%
+  group_by(legumes_ns6) %>%
+  mutate(S6legume_rank = ntile(ea_legumer,3))
+
+dffS6$S6legume_rank[dffS6$LENTILQUANT_SUM==0] <- 0
+
+
+# Energy-adjusted legume intake for each category
+dffS6 %>%
+  group_by(S6legume_rank) %>%
+  summarise(
+    count = n(),
+    mean =mean(ea_legumer), #Calculating mean
+    median = median(ea_legumer), #Calculating median
+    sd= sd(ea_legumer), #Calculating standard deviation
+    IQF = IQR(ea_legumer) #Calculating inter-quartile range
+  )
+
+#Checking distribution of cases in each group of legumes
+table(dffS6$S6legume_rank, dffS6$DM_INC08)
+
+#Creating a variable for median consumption of each group
+dffS6$LCMedianS6<-dffS6$S6legume_rank
+
+dffS6$LCMedianS6[dffS6$S6legume_rank == 1] <- 0
+dffS6$LCMedianS6[dffS6$S6legume_rank == 2] <- 6.00
+dffS6$LCMedianS6[dffS6$S6legume_rank == 3] <- 13.65
+dffS6$LCMedianS6[dffS6$S6legume_rank == 4] <- 28.98
+
+
+dffS6$LCMedianS6 <- as.numeric(dffS6$LCMedianS6)
+
+
+attach(dffS6) # Attaching datasets
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+
+# Assigning correct object class of each variables
+S6legume_rank <- factor(dffS6$S6legume_rank, levels=c(0,1,2,3))
+SEX <- factor(dffS6$SEX, levels=c(1,2))
+CIGSTAT <- factor(dffS6$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dffS6$RUPE, levels=c(1,2,3,4))
+SC <- factor(dffS6$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dffS6$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dffS6$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dffS6$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dffS6$FH_MI, levels=c(1,2))
+FH_CA <- factor(dffS6$FH_CA, levels=c(1,2))
+#MENOSTAT <- factor(dff$MENOSTAT, levels=c(1,2,3,4))
+#HRT_EVER <- factor(dff$HRT_EVER, levels=c(1,2))
+WAIST_Class <- factor(dffS6$WAIST_Class, levels=c(1,2))
+
+
+# Adjusted Model with Covariates
+cox_M5S6 <- coxph(Surv(entryage, exitage, DM_INC08)~S6legume_rank+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S6)
+
+cox_M5S6C <- coxph(Surv(entryage, exitage, DM_INC08)~legumesvge+
+                    SEX+
+                    CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                    D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                    FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                    BMI+WAIST_Class)
+summary(cox_M5S6C)
+```
+
+################################################################################
+## Sensitivity Analysis 6
+################################################################################
+
+## Impute missing values of covariates using multiple imputation to assess the effect of missing data on the associations.
+
+```{r}
+#Dealing missing covariates with multiple imputation
+
+# Look at the missing data patterns
+skim(dff)
+gg_miss_upset(dff)
+
+# Subsetting variables for Multiple Imputation
+dffimputed <- dff[, c(1:4,6, 8:10,13,15,17:20,23,24,26,27,29,53,55,64,65,122,130,131, 132,143,
+                      146:150,152:156,158:160,166:176,196,227,229,230,237,238,274,275,281)]
+
+
+#skim(dffimputed)
+
+# Ensure variables are defined as factor as required
+dffimputed$SEX <- as.factor(dffimputed$SEX)
+dffimputed$ETHNIC <- as.factor(dffimputed$ETHNIC)
+dffimputed$SC <- as.factor(dffimputed$SC)
+dffimputed$MARITAL_STATUS <- as.factor(dffimputed$MARITAL_STATUS)
+dffimputed$EDLEVEL09 <- as.factor(dffimputed$EDLEVEL09)
+dffimputed$CIGSTAT <- as.factor(dffimputed$CIGSTAT)
+dffimputed$RUPE  <- as.factor(dffimputed$RUPE)
+dffimputed$FH_DM <- as.factor(dffimputed$FH_DM)
+dffimputed$FH_CVA <- as.factor(dffimputed$FH_CVA)
+dffimputed$FH_MI <- as.factor(dffimputed$FH_MI)
+dffimputed$FH_CA <- as.factor(dffimputed$FH_CA)
+dffimputed$CVA <- as.factor(dffimputed$CVA)
+dffimputed$CA <- as.factor(dffimputed$CA)
+dffimputed$MI <- as.factor(dffimputed$MI)
+dffimputed$WAIST <- as.numeric(dffimputed$WAIST)
+dffimputed$BP <- as.factor(dffimputed$BP)
+dffimputed$CHOLESTEROL <- as.factor(dffimputed$CHOLESTEROL)
+dffimputed$legume_rankr <- as.factor(dffimputed$legume_rankr)
+dffimputed$WAIST_Class <- as.factor(dffimputed$WAIST_Class)
+
+# Recheck structure of data
+#str(dffimputed)
+
+imputed <- mice(dffimputed, method = 'rf', m=15)
+
+# Explore the structure of the imputed object
+summary(imputed)
+
+attributes(imputed)
+
+
+attach(imputed)# Attach imputed datasets
+
+
+#Estimation of Hazard Ratio (HR) to quantify difference between the groups
+# Fit the analysis model to each imputed datasets
+fit1 <- with(imputed, coxph(Surv(entryage, exitage, DM_INC08)~legume_rankr+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS++D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class))
+
+fit2 <- with(imputed, coxph(Surv(entryage, exitage, DM_INC08)~legumesvg+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+SC+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS++D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI+WAIST_Class))
+
+```
+
+# Calculate pooled estimated HR with Rubin's rule
+```{r}
+pool(fit1)
+
+summary(pool(fit1), conf.int =TRUE)
+
+exp(-2.681128e-03)
+exp(-1.996248e-01)
+exp(1.942625e-01)
+
+exp(1.076812e-01)
+exp(-7.823436e-02)
+exp(2.935968e-01)
+
+exp(2.652713e-02)
+exp(-1.669325e-01)
+exp(2.199867e-01)
+```
+
+
+```{r}
+pool(fit2)
+
+summary(pool(fit2), conf.int =TRUE)
+
+exp(2.208680e-02)
+exp(-6.548570e-02)
+exp(1.096593e-01)
+```
+
+################################################################################
+## Dose response analysis
+################################################################################
+## Cubic Spline regression for total legumes
+
+```{r}
+attach(dff)
+```
+
+
+```{r}
+## Fit the model
+legume_rankr <- factor(dff$legume_rankr, levels=c(0,1,2,3))
+SEX <- factor(dff$SEX, levels=c(1,2))
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+
+mfit1 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(legumesvg, df=4)+
+                  SEX+
+                  CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                  D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                  FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                  BMI,data=dff)
+
+summary(mfit1)
+
+## Return the data points to plot HR
+ptemp <-termplot(mfit1, se=TRUE, plot=FALSE)
+lterm <-ptemp$legumesvg
+
+lterm <- lterm %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm$x, lterm$HR, type='l', lty = 1, xlab = 'Consumption of total legumes(servings/day)', 
+        ylab='Hazard ratio', xlim=c(0,4), ylim=c(0,3))
+lines(lterm$x, lterm$LCI, lty = 'dashed', col = 'black')
+lines(lterm$x, lterm$HCI, lty = 'dashed', col = 'black')
+```
+
+
+## Cubic Spline regression for lentil
+
+```{r}
+## Fit the model
+dfln <- dff%>%
+  filter(lentilsvg<4)
+
+attach(dfln)
+
+SEX <- factor(dfln$SEX, levels=c(1,2))
+CIGSTAT <- factor(dfln$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dfln$RUPE, levels=c(1,2,3,4))
+SC <- factor(dfln$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dfln$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dfln$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dfln$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dfln$FH_MI, levels=c(1,2))
+FH_CA <- factor(dfln$FH_CA, levels=c(1,2))
+WAIST_Class <- factor(dfln$WAIST_Class, levels=c(1,2))
+
+mfit2<- coxph(Surv(entryage, exitage, DM_INC08)~pspline(lentilsvg, df=4)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dfln)
+
+summary(mfit2)
+
+## Return the data points to plot HR
+ptemp2 <-termplot(mfit2, se=TRUE, plot=FALSE)
+lterm2 <-ptemp2$lentilsvg
+
+lterm2 <- lterm2 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm2$x, lterm2$HR, type='l', lty = 1, xlab = 'Consumption of lentils(servings/day)', 
+        ylab='Hazard ratio', xlim=c(0,4), ylim=c(0,10))
+lines(lterm2$x, lterm2$LCI, lty = 'dashed', col = 'black')
+lines(lterm2$x, lterm2$HCI, lty = 'dashed', col = 'black')
+```
+
+
+## Cubic Spline regression for Peas
+```{r}
+## Fit the model
+dfp <- dff%>%
+  filter(peasvg<7)
+
+attach(dfp)
+
+SEX <- factor(dfp$SEX, levels=c(1,2))
+CIGSTAT <- factor(dfp$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dfp$RUPE, levels=c(1,2,3,4))
+SC <- factor(dfp$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dfp$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dfp$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dfp$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dfp$FH_MI, levels=c(1,2))
+FH_CA <- factor(dfp$FH_CA, levels=c(1,2))
+WAIST_Class <- factor(dfp$WAIST_Class, levels=c(1,2))
+
+
+mfit3 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(peasvg, df=4)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dfp)
+
+summary(mfit3)
+
+## Return the data points to plot HR
+ptemp3 <-termplot(mfit3, se=TRUE, plot=FALSE)
+lterm3 <-ptemp3$peasvg
+
+lterm3 <- lterm3 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+  
+## Plot lines
+matplot(lterm3$x, lterm3$HR, type='l', lty = 1, xlab = 'Consumption of peas(servings/day)', 
+        ylab='Hazard ratio', xlim=c(0,4), ylim=c(0,3))
+lines(lterm3$x, lterm3$LCI, lty = 'dashed', col = 'black')
+lines(lterm3$x, lterm3$HCI, lty = 'dashed', col = 'black')
+
+```
+
+## Cubic Spline regression for Beans
+
+```{r}
+attach(dff)
+```
+
+```{r}
+## Fit the model
+SEX <- factor(dff$SEX, levels=c(1,2))
+CIGSTAT <- factor(dff$CIGSTAT, levels=c(1,2,3))
+RUPE <- factor(dff$RUPE, levels=c(1,2,3,4))
+SC <- factor(dff$SC, levels=c(0,10,20,31,32,40,50))
+EDLEVEL09 <- factor(dff$EDLEVEL09, levels=c(0,1,2,3))
+FH_DM <- factor(dff$FH_DM, levels=c(1,2))
+FH_CVA <- factor(dff$FH_CVA, levels=c(1,2))
+FH_MI <- factor(dff$FH_MI, levels=c(1,2))
+FH_CA <- factor(dff$FH_CA, levels=c(1,2))
+WAIST_Class <- factor(dff$WAIST_Class, levels=c(1,2))
+
+mfit4 <- coxph(Surv(entryage, exitage, DM_INC08)~pspline(beansvg, df=4)+
+                   SEX+
+                   CIGSTAT+D1_NUT002+strata(RUPE)+EDLEVEL09+
+                   D1_VEG_A+D1_FRUIT_A+Fish+Meat+MILK+EGGS+D1_NUT065+
+                   FH_DM+FH_CVA+strata(FH_MI)+FH_CA+
+                   BMI,data=dff)
+
+summary(mfit4)
+
+## Return the data points to plot HR
+ptemp4 <-termplot(mfit4, se=TRUE, plot=FALSE)
+lterm4 <-ptemp4$beansvg
+
+lterm4 <- lterm4 %>%
+  mutate(HR=exp(y))%>%
+  mutate(LCI=exp(y-1.96*(se)))%>%
+  mutate(HCI=exp(y+1.96*(se)))
+
+## Plot lines
+matplot(lterm4$x, lterm4$HR, type='l', lty = 1, xlab = 'Consumption of beans(servings/day)', 
+        ylab='Hazard ratio', xlim=c(0,4), ylim=c(0,3))
+lines(lterm4$x, lterm4$LCI, lty = 'dashed', col = 'black')
+lines(lterm4$x, lterm4$HCI, lty = 'dashed', col = 'black')
+
+```
