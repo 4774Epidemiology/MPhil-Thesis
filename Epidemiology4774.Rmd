@@ -7,7 +7,7 @@ output:
 
 ```{r}
 .libPaths()
-newpath <- c("K:/EPIC_NORFOLK/Nazmul Sarwar/Library")
+newpath <- c("K:/EPIC_NORFOLK/XX/Library")
 .libPaths(newpath)
 .libPaths()
 ```
